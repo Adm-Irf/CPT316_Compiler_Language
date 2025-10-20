@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 
-enum class TokenType { IDENTIFIER, NUMBER, OPERATOR, INVALID };
+enum class TokenType { IDENTIFIER, NUMBER, OPERATOR, ASSIGNMENT, INVALID };
 
 struct Token {
     TokenType type;
