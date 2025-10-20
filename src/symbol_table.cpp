@@ -12,6 +12,6 @@ int SymbolTable::insert(const std::string& name, const std::string& type) {
 }
 
 const Symbol* SymbolTable::lookup(const std::string& name) const {
-    auto it = table.find(name);
-    return (it != table.end()) ? &it->second : nullptr;
+    auto it = table.find(name); 
+    return (it != table.end()) ? &it->second : nullptr; // returns the address of the token in the symbol table if found else return nullptr
 }
