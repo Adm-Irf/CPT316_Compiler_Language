@@ -41,17 +41,17 @@ std::vector<Token> Lexer::tokenize()
             pos++;
         }
         else if (c == '(')
-        {
+        { // Left Parentheses
             tokens.push_back(Token(TokenType::LEFT_PAREN, "("));
             pos++;
         }
         else if (c == ')')
-        {
+        { // Right Parentheses
             tokens.push_back(Token(TokenType::RIGHT_PAREN, ")"));
             pos++;
         }
         else if (c == ';')
-        {
+        { // Statement Terminator
             tokens.push_back(Token(TokenType::STATEMENT_TERMINATOR, ";"));
             pos++;
         }

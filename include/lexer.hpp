@@ -3,11 +3,13 @@
 #include <string>
 #include <vector>
 
-class Lexer {
+class Lexer
+{
 private:
     std::string input;
     size_t pos;
+
 public:
-    explicit Lexer(const std::string& text);
+    explicit Lexer(const std::string &text);
     std::vector<Token> tokenize();
 };

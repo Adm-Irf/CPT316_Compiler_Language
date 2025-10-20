@@ -3,7 +3,8 @@
 #include <iostream>
 #include <vector>
 
-int main() {
+int main()
+{
     std::string input;
     std::cout << "Enter expression: ";
     std::getline(std::cin, input);
@@ -12,10 +13,13 @@ int main() {
     std::vector<Token> tokens = lexer.tokenize();
 
     Parser parser(tokens);
-    if (parser.parse()) {
+    if (parser.parse())
+    {
         std::cout << "Valid syntax.\n";
         parser.printSyntaxTree();
-    } else {
+    }
+    else
+    {
         std::cerr << "Syntax error.\n";
     }
 }

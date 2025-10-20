@@ -2,18 +2,21 @@
 #include <string>
 #include <unordered_map>
 
-struct Symbol {
+struct Symbol
+{
     std::string name;
     std::string type;
-    int address;  // optional — can represent memory offset or index
+    int address; // optional — can represent memory offset or index
 };
 
-class SymbolTable {
+class SymbolTable
+{
 private:
     std::unordered_map<std::string, Symbol> table;
     int nextAddress = 0;
+
 public:
-    bool exists(const std::string& name) const;
-    int insert(const std::string& name, const std::string& type);
-    const Symbol* lookup(const std::string& name) const;
+    bool exists(const std::string &name) const;
+    int insert(const std::string &name, const std::string &type);
+    const Symbol *lookup(const std::string &name) const;
 };
