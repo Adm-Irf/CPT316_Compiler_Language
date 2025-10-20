@@ -40,6 +40,22 @@ std::vector<Token> Lexer::tokenize()
             tokens.push_back(Token(TokenType::ASSIGNMENT, std::string(1, c)));
             pos++;
         }
+        else if (c == '(')
+        {
+            tokens.push_back(Token(TokenType::LEFT_PAREN, "("));
+            pos++;
+        }
+        else if (c == ')')
+        {
+            tokens.push_back(Token(TokenType::RIGHT_PAREN, ")"));
+            pos++;
+        }
+        else if (c == ';')
+        {
+            tokens.push_back(Token(TokenType::STATEMENT_TERMINATOR, ";"));
+            pos++;
+        }
+
         else
         { // Invalid Case
             tokens.push_back(Token(TokenType::INVALID, std::string(1, c)));
