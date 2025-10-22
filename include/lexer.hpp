@@ -8,6 +8,14 @@ class Lexer
 private:
     std::string input;
     size_t pos;
+    int id;
+    int IDENTIFIER;
+    int NUMBER;
+    int OPERATOR;
+    int ASSIGNMENT;
+    int PARENTHESES;
+    int STATEMENT_TERMINATOR;
+    int INVALID;
 
 public:
     explicit Lexer(const std::string &text);
