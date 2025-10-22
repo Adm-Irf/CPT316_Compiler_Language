@@ -2,7 +2,7 @@
 #include <cctype>
 
 // constructor
-Lexer::Lexer(const std::string &text) : input(text), pos(0), IDENTIFIER(0), NUMBER(0), OPERATOR(0), ASSIGNMENT(0), PARENTHESES(0), STATEMENT_TERMINATOR(0), INVALID(0) {}
+Lexer::Lexer(const std::string &text) : input(text), pos(0), line(0), column(0), IDENTIFIER(0), NUMBER(0), OPERATOR(0), ASSIGNMENT(0), PARENTHESES(0), STATEMENT_TERMINATOR(0), INVALID(0) {}
 
 std::vector<Token> Lexer::tokenize()
 {
@@ -12,8 +12,16 @@ std::vector<Token> Lexer::tokenize()
     {
         char c = input[pos];
 
-        if (std::isspace(c))
+        if (c == '\n')
         {
+            line++;
+            pos++;
+            column = 0;
+            continue;
+        }
+        else if (std::isspace(c)) // continue to next token when whitespace is found
+        {
+            column++;
             pos++;
             continue;
         }
@@ -21,53 +29,62 @@ std::vector<Token> Lexer::tokenize()
         if (std::islower(c))
         { // Identifier
             std::string id(1, c);
+            tokens.emplace_back(TokenType::IDENTIFIER, id, pos);
             pos++;
-            tokens.push_back(Token(TokenType::IDENTIFIER, id));
+            column++;
             IDENTIFIER++; // track count of identifier token type
         }
         else if (std::isdigit(c))
         { // Number
+            size_t start_pos = pos;
             std::string num;
             while (pos < input.size() && std::isdigit(input[pos]))
                 num += input[pos++];
-            tokens.push_back(Token(TokenType::NUMBER, num));
+                column++;
+            tokens.emplace_back(TokenType::NUMBER, num, start_pos);
             NUMBER++; // track count of number token type
         }
         else if (c == '+' || c == '-' || c == '*' || c == '/')
         { // Operator
-            tokens.push_back(Token(TokenType::OPERATOR, std::string(1, c)));
+            tokens.emplace_back(TokenType::OPERATOR, std::string(1, c), pos);
             pos++;
+            column++;
             OPERATOR++; // track count of operator token type
         }
         else if (c == '=')
         { // Assignment
-            tokens.push_back(Token(TokenType::ASSIGNMENT, std::string(1, c)));
+            tokens.emplace_back(TokenType::ASSIGNMENT, std::string(1, c), pos);
             pos++;
+            column++;
             ASSIGNMENT++; // track count of assignment token type
         }
         else if (c == '(')
         { // Left Parentheses
-            tokens.push_back(Token(TokenType::LEFT_PAREN, "("));
+            tokens.emplace_back(TokenType::LEFT_PAREN, "(", pos);
             pos++;
+            column++;
             PARENTHESES++; // track count of parentheses token type
         }
         else if (c == ')')
         { // Right Parentheses
-            tokens.push_back(Token(TokenType::RIGHT_PAREN, ")"));
+            tokens.emplace_back(TokenType::RIGHT_PAREN, ")", pos);
             pos++;
+            column++;
             PARENTHESES++; // track count of parentheses token type
         }
         else if (c == ';')
         { // Statement Terminator
-            tokens.push_back(Token(TokenType::STATEMENT_TERMINATOR, ";"));
+            tokens.emplace_back(TokenType::STATEMENT_TERMINATOR, ";", pos);
             pos++;
+            column++;
             STATEMENT_TERMINATOR++; // track count of statement terminator token type
         }
 
         else
         { // Invalid Case
-            tokens.push_back(Token(TokenType::INVALID, std::string(1, c)));
+            tokens.emplace_back(TokenType::INVALID, std::string(1, c), pos);
             pos++;
+            column++;
             INVALID++; // track count of invalid tokens
         }
     }
