@@ -39,8 +39,11 @@ std::vector<Token> Lexer::tokenize()
             size_t start_pos = pos;
             std::string num;
             while (pos < input.size() && std::isdigit(input[pos]))
+            {
                 num += input[pos++];
                 column++;
+            }
+
             tokens.emplace_back(TokenType::NUMBER, num, start_pos);
             NUMBER++; // track count of number token type
         }
