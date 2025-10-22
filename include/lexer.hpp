@@ -11,7 +11,7 @@ private:
     size_t line;
     size_t column;
     int id;
-    
+
     int IDENTIFIER;
     int NUMBER;
     int OPERATOR;
