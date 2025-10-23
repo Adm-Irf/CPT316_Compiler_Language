@@ -17,6 +17,7 @@ int main()
     {
         std::cout << "Valid syntax.\n";
         parser.printSyntaxTree();
+        lexer.summarize(); // Print summary which is tokens types + the number of time they appeared in the statement.
     }
     else
     {

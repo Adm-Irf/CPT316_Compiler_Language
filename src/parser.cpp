@@ -34,5 +34,5 @@ bool Parser::parse()
 
 void Parser::printSyntaxTree()
 {
-    std::cout << "(Assign\n  (Left: ID)\n  (Right: Expression))\n";
+    std::cout << "(Assign\n  (Left: ID)\n  (Right: Expression))\n" << std::endl;
 }

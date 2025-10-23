@@ -1,5 +1,8 @@
 #include "../include/lexer.hpp"
+#include <iostream>
+#include <string>
 #include <cctype>
+#include <map>
 
 // constructor
 Lexer::Lexer(const std::string &text) : input(text), pos(0), line(0), column(0), IDENTIFIER(0), NUMBER(0), OPERATOR(0), ASSIGNMENT(0), PARENTHESES(0), STATEMENT_TERMINATOR(0), INVALID(0) {}
@@ -93,4 +96,25 @@ std::vector<Token> Lexer::tokenize()
     }
 
     return tokens;
+}
+
+void Lexer::summarize()
+{
+    std::vector<std::pair<std::string, int>> tokens = {
+        {"Identifier", IDENTIFIER},
+        {"Number", NUMBER},
+        {"Operator", OPERATOR},
+        {"Assignment", ASSIGNMENT},
+        {"Parentheses", PARENTHESES},
+        {"Statement Terminator", STATEMENT_TERMINATOR},
+        {"Invalid", INVALID}};
+
+    for (size_t i = 0; i < tokens.size(); ++i)
+    {
+        const std::string &name = tokens[i].first;
+        int count = tokens[i].second;
+
+        if (count > 0)
+            std::cout << name << ": " << count << std::endl;
+    }
 }

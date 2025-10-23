@@ -23,4 +23,5 @@ private:
 public:
     explicit Lexer(const std::string &text);
     std::vector<Token> tokenize();
+    void summarize();
 };
