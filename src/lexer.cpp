@@ -1,4 +1,4 @@
-#include "lexer.hpp"
+#include "../include/lexer.hpp"
 #include <cctype>
 
 // constructor
@@ -29,7 +29,7 @@ std::vector<Token> Lexer::tokenize()
         if (std::islower(c))
         { // Identifier
             std::string id(1, c);
-            tokens.emplace_back(TokenType::IDENTIFIER, id, pos);
+            tokens.emplace_back(TokenType::IDENTIFIER, id, pos, line, column);
             pos++;
             column++;
             IDENTIFIER++; // track count of identifier token type
@@ -44,40 +44,40 @@ std::vector<Token> Lexer::tokenize()
                 column++;
             }
 
-            tokens.emplace_back(TokenType::NUMBER, num, start_pos);
+            tokens.emplace_back(TokenType::NUMBER, num, start_pos, line, column);
             NUMBER++; // track count of number token type
         }
         else if (c == '+' || c == '-' || c == '*' || c == '/')
         { // Operator
-            tokens.emplace_back(TokenType::OPERATOR, std::string(1, c), pos);
+            tokens.emplace_back(TokenType::OPERATOR, std::string(1, c), pos, line, column);
             pos++;
             column++;
             OPERATOR++; // track count of operator token type
         }
         else if (c == '=')
         { // Assignment
-            tokens.emplace_back(TokenType::ASSIGNMENT, std::string(1, c), pos);
+            tokens.emplace_back(TokenType::ASSIGNMENT, std::string(1, c), pos, line, column);
             pos++;
             column++;
             ASSIGNMENT++; // track count of assignment token type
         }
         else if (c == '(')
         { // Left Parentheses
-            tokens.emplace_back(TokenType::LEFT_PAREN, "(", pos);
+            tokens.emplace_back(TokenType::LEFT_PAREN, "(", pos, line, column);
             pos++;
             column++;
             PARENTHESES++; // track count of parentheses token type
         }
         else if (c == ')')
         { // Right Parentheses
-            tokens.emplace_back(TokenType::RIGHT_PAREN, ")", pos);
+            tokens.emplace_back(TokenType::RIGHT_PAREN, ")", pos, line, column);
             pos++;
             column++;
             PARENTHESES++; // track count of parentheses token type
         }
         else if (c == ';')
         { // Statement Terminator
-            tokens.emplace_back(TokenType::STATEMENT_TERMINATOR, ";", pos);
+            tokens.emplace_back(TokenType::STATEMENT_TERMINATOR, ";", pos, line, column);
             pos++;
             column++;
             STATEMENT_TERMINATOR++; // track count of statement terminator token type
@@ -85,7 +85,7 @@ std::vector<Token> Lexer::tokenize()
 
         else
         { // Invalid Case
-            tokens.emplace_back(TokenType::INVALID, std::string(1, c), pos);
+            tokens.emplace_back(TokenType::INVALID, std::string(1, c), pos, line, column);
             pos++;
             column++;
             INVALID++; // track count of invalid tokens

@@ -1,4 +1,4 @@
-#include "parser.hpp"
+#include "../include/parser.hpp"
 #include <iostream>
 
 Parser::Parser(const std::vector<Token> &toks) : tokens(toks), pos(0) {}
