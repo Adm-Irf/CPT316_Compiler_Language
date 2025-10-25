@@ -1,14 +1,14 @@
-#pragma once
-#include "token.hpp"
+#pragma once                // Header Guard
+#include "token.hpp"        // Include Token CLass
 #include <string>
 #include <vector>
 
+// Lexer Class converts source code text into tokens
 class Lexer
 {
 private:
-    std::string input;
-    size_t pos;
-    size_t line;
+    std::string input;      // Input string to be tokenized
+    size_t pos;             // Current Index in input strings
     size_t column;
     int id;
 
