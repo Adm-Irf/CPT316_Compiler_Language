@@ -9,7 +9,6 @@ class Lexer
 private:
     std::string input;      // Input string to be tokenized
     size_t pos;             // Current Index in input strings
-    int id;
 
     // Counter of Tokens
     int IDENTIFIER;
