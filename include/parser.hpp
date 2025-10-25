@@ -1,5 +1,5 @@
-#pragma once
-#include "token.hpp"
+#pragma once                // Header Guard
+#include "token.hpp"        // Include Token Class
 #include <vector>
 
 class Parser

@@ -1,5 +1,5 @@
 #pragma once                // Header Guard
-#include "token.hpp"        // Include Token CLass
+#include "token.hpp"        // Include Token Class
 #include <string>
 #include <vector>
 
@@ -9,9 +9,9 @@ class Lexer
 private:
     std::string input;      // Input string to be tokenized
     size_t pos;             // Current Index in input strings
-    size_t column;
     int id;
 
+    // Counter of Tokens
     int IDENTIFIER;
     int NUMBER;
     int OPERATOR;
@@ -21,7 +21,7 @@ private:
     int INVALID;
 
 public:
-    explicit Lexer(const std::string &text);
-    std::vector<Token> tokenize();
-    void summarize();
+    explicit Lexer(const std::string &text);    // Constructor (Initialize lexer input string)
+    std::vector<Token> tokenize();              // Function that returns a vector of Token Object
+    void summarize();                           // Function that prints the summary Tokens Count
 };
