@@ -1,16 +1,18 @@
 #pragma once                // Header Guard
-#include "token.hpp"        // Include Token Class
+#include "token.hpp"        // Include Token Class (enum TokenType & struct Token)
 #include <vector>
 
 class Parser
 {
-private:
-    struct Node
+
+// Private : Accessible only inside Parser Class (Encapsulation)
+private: 
+    struct Node          // Represent Node in syntax tree
     {
-        std::string value;
-        TokenType type;
-        Node *left = nullptr; // C++ default member initialization
-        Node *right = nullptr;
+        std::string value;          // Actual Token string ("3","z","+")     
+        TokenType type;             // Token Type (NUM,ID,OP)
+        Node *left = nullptr;       // C++ default member initialization
+        Node *right = nullptr;      
 
         // constructor
         Node(const std::string &val, TokenType t, Node *l = nullptr, Node *r = nullptr)

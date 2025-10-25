@@ -84,27 +84,35 @@ void Parser::printSyntaxTree()
         std::cout << "Syntax tree is empty.\n";
         return;
     }
+
+    std::cout << "\nSyntax Tree (rotated view):\n";
     printNode(root, 0);
 }
 
-void Parser::printNode(const Node *node, int depth)
+
+void Parser::printNode(const Node *node, int space)
 {
-    if (!node)
+    if (node == nullptr)
         return;
 
-    // indentation
-    for (int i = 0; i < depth; ++i)
-        std::cout << "  ";
+    const int INDENT = 6;  // spacing between levels
 
-    // print current node
+    // Increase distance between levels
+    space += INDENT;
+
+    // Process right child first
+    printNode(node->right, space);
+
+    // Print current node after spaces
+    std::cout << std::endl;
+    for (int i = INDENT; i < space; i++)
+        std::cout << " ";
     std::cout << node->value << " (" << tokenTypeToString(node->type) << ")" << std::endl;
 
-    // recursively print left and right children
-    if (node->left)
-        printNode(node->left, depth + 1);
-    if (node->right)
-        printNode(node->right, depth + 1);
+    // Process left child
+    printNode(node->left, space);
 }
+
 
 std::string Parser::tokenTypeToString(TokenType type)
 {
