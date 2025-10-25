@@ -6,7 +6,7 @@ class Parser
 {
 
 // Private : Accessible only inside Parser Class (Encapsulation)
-private: 
+public: 
     struct Node          // Represent Node in syntax tree
     {
         std::string value;          // Actual Token string ("3","z","+")     
@@ -19,6 +19,7 @@ private:
             : value(val), type(t), left(l), right(r) {}
     };
 
+private: 
     const std::vector<Token> &tokens;
     size_t pos;
     Node *root = nullptr; // store the root of the tree
@@ -30,6 +31,10 @@ private:
 
     void printNode(const Node *, int);
     std::string tokenTypeToString(TokenType);
+
+    int getTreeHeight(const Node* node);
+    void fillTree(const Node* node, std::vector<std::string>& grid, int row, int col, int offset, int height);
+
 
 public:
     explicit Parser(const std::vector<Token> &toks);
