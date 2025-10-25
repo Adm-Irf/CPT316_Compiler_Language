@@ -6,3 +6,16 @@ This simple compiler, consisting of only a lexer and a parser, is built to suppo
 ## How to run
 1) double click the run.bat file
 2) enter run.bat into your command line
+
+Code Explaination : 
+
+.hpp vs .cpp
+
+.hpp (Header File)
+- Serve the same fundamental as .h file in C/C++
+- To declare elements that are defined in .cpp file
+- Tells the compiler of *what is actually existing*
+
+.cpp (Source File)
+- Contain the actual implementation of function and classes declared in .hpp
+- Tells the compiler of *how it should works*
