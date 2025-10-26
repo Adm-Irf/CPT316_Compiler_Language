@@ -8,96 +8,195 @@
 #include <iomanip>
 using namespace std;
 
+Parser::Parser(const std::vector<Token> &toks)
+    : tokens(toks), pos(0) {}
 
-Parser::Parser(const std::vector<Token> &toks) : tokens(toks), pos(0) {}
-
-// for COMPY language the syntactic granularity is as follows:
-// <stmt> → <expr> → <term> → <factor>
-
-bool Parser::parse()
-{
-    root = parseStatement(); // build tree
-    return root != nullptr;
+// Single reporter: only the FIRST error is printed
+void Parser::reportError(const std::string &msg) {
+    if (!errorOccurred) {
+        std::cerr << "Syntax error: " << msg << std::endl;
+        errorOccurred = true;
+    }
 }
 
-Parser::Node *Parser::parseStatement()
-{
-    if (tokens[pos].type != TokenType::IDENTIFIER)
+// <stmt> ::= IDENTIFIER '=' <expr> [';']
+bool Parser::parse() {
+    if (tokens.empty()) {
+        reportError("empty input.");
+        return false;
+    }
+
+    root = parseStatement();
+    if (errorOccurred || !root) return false;
+
+    // Allow a single optional ';' at the end
+    if (pos < tokens.size() && tokens[pos].value == ";") {
+        ++pos;
+    }
+
+    // Anything left after a valid statement is an error
+    if (pos < tokens.size()) {
+        const auto &t = tokens[pos];
+        reportError(
+            "extra tokens after valid statement near '" + t.value +
+            "' at index " + std::to_string(t.start_pos));
+        return false;
+    }
+    return true;
+}
+
+Parser::Node *Parser::parseStatement() {
+    if (errorOccurred) return nullptr;
+
+    // IDENTIFIER
+    if (pos >= tokens.size() || tokens[pos].type != TokenType::IDENTIFIER) {
+        if (pos < tokens.size()) {
+            reportError("statement must start with an identifier, got '" +
+                        tokens[pos].value + "' at index " +
+                        std::to_string(tokens[pos].start_pos));
+        } else {
+            reportError("statement must start with an identifier.");
+        }
         return nullptr;
+    }
+
     Node *left = new Node(tokens[pos].value, TokenType::IDENTIFIER);
-    pos++;
+    ++pos;
 
-    if (tokens[pos].value != "=")
+    // '='
+    if (pos >= tokens.size() || tokens[pos].value != "=") {
+        if (pos < tokens.size()) {
+            reportError("missing '=' after identifier before '" +
+                        tokens[pos].value + "' at index " +
+                        std::to_string(tokens[pos].start_pos));
+        } else {
+            reportError("missing '=' after identifier.");
+        }
         return nullptr;
-    pos++;
+    }
+    ++pos;
 
-    Node *right = parseExpr(); // recursively parse expression
-    if (!right)
-        return nullptr;
+    // <expr>
+    Node *right = parseExpr();
+    if (!right) return nullptr;
 
     return new Node("=", TokenType::ASSIGNMENT, left, right);
 }
 
-Parser::Node *Parser::parseExpr()
-{
+Parser::Node *Parser::parseExpr() {
+    if (errorOccurred) return nullptr;
+
     Node *left = parseTerm();
-    while (pos < tokens.size() &&
-           (tokens[pos].value == "+" || tokens[pos].value == "-"))
-    {
+    if (!left) return nullptr;
+
+    while (!errorOccurred && pos < tokens.size() &&
+           (tokens[pos].value == "+" || tokens[pos].value == "-")) {
         std::string op = tokens[pos].value;
-        pos++;
+        ++pos;
+
         Node *right = parseTerm();
+        if (!right) return nullptr;
+
         left = new Node(op, TokenType::OPERATOR, left, right);
     }
-    return left;
-}
 
-Parser::Node *Parser::parseTerm()
-{
-    Node *left = parseFactor();
-    while (pos < tokens.size() &&
-           (tokens[pos].value == "*" || tokens[pos].value == "/"))
-    {
-        std::string op = tokens[pos].value;
-        pos++;
-        Node *right = parseFactor();
-        left = new Node(op, TokenType::OPERATOR, left, right);
-    }
-    return left;
-}
+    // If next token is a factor-start, operator is missing
+    if (!errorOccurred && pos < tokens.size()) {
+        const auto &t = tokens[pos];
+        bool looksLikeFactor =
+            (t.type == TokenType::IDENTIFIER) ||
+            (t.type == TokenType::NUMBER) ||
+            (t.value == "(");
 
-Parser::Node *Parser::parseFactor()
-{
-    if (tokens[pos].type == TokenType::IDENTIFIER ||
-        tokens[pos].type == TokenType::NUMBER)
-    {
-        return new Node(tokens[pos++].value, tokens[pos - 1].type);
-    }
-    else if (tokens[pos].value == "(")
-    {
-        pos++;
-        Node *expr = parseExpr();
-        if (tokens[pos].value != ")")
+        if (looksLikeFactor) {
+            reportError("missing operator before '" + t.value +
+                        "' at index " + std::to_string(t.start_pos));
             return nullptr;
-        pos++;
+        }
+    }
+
+    return left;
+}
+
+Parser::Node *Parser::parseTerm() {
+    if (errorOccurred) return nullptr;
+
+    Node *left = parseFactor();
+    if (!left) return nullptr;
+
+    while (!errorOccurred && pos < tokens.size() &&
+           (tokens[pos].value == "*" || tokens[pos].value == "/")) {
+        std::string op = tokens[pos].value;
+        ++pos;
+
+        Node *right = parseFactor();
+        if (!right) return nullptr;
+
+        left = new Node(op, TokenType::OPERATOR, left, right);
+    }
+
+    // If next token is a factor-start, operator is missing
+    if (!errorOccurred && pos < tokens.size()) {
+        const auto &t = tokens[pos];
+        bool looksLikeFactor =
+            (t.type == TokenType::IDENTIFIER) ||
+            (t.type == TokenType::NUMBER) ||
+            (t.value == "(");
+
+        if (looksLikeFactor) {
+            reportError("missing operator before '" + t.value +
+                        "' at index " + std::to_string(t.start_pos));
+            return nullptr;
+        }
+    }
+
+    return left;
+}
+
+Parser::Node *Parser::parseFactor() {
+    if (errorOccurred) return nullptr;
+    if (pos >= tokens.size()) {
+        reportError("unexpected end of expression.");
+        return nullptr;
+    }
+
+    const auto &t = tokens[pos];
+
+    if (t.type == TokenType::IDENTIFIER || t.type == TokenType::NUMBER) {
+        ++pos;
+        return new Node(t.value, t.type);
+    }
+
+    if (t.value == "(") {
+        ++pos; // consume '('
+        Node *expr = parseExpr();
+        if (!expr) return nullptr;
+
+        if (pos >= tokens.size() || tokens[pos].value != ")") {
+            if (pos < tokens.size()) {
+                reportError("missing closing parenthesis before '" +
+                            tokens[pos].value + "' at index " +
+                            std::to_string(tokens[pos].start_pos));
+            } else {
+                reportError("missing closing parenthesis.");
+            }
+            return nullptr;
+        }
+        ++pos; // consume ')'
         return expr;
     }
+
+    reportError("unexpected token '" + t.value +
+                "' at index " + std::to_string(t.start_pos));
     return nullptr;
 }
 
-
-
-int Parser::getTreeHeight(const Node* node)
-{
+int Parser::getTreeHeight(const Node* node) {
     if (!node) return 0;
     return 1 + std::max(getTreeHeight(node->left), getTreeHeight(node->right));
 }
 
-
-/// ----------------------------------------------------------
-// BEAUTIFUL TREE WITH TOKEN TYPE LABELS
-// ----------------------------------------------------------
-
+// ---------- pretty printer (unchanged) ----------
 static std::string classifyToken(const std::string& val)
 {
     if (val == "=") return "(ASSIGN)";
@@ -106,7 +205,7 @@ static std::string classifyToken(const std::string& val)
     if (val == ";") return "(END)";
     if (std::isalpha(val[0])) return "(ID)";
     if (std::isdigit(val[0])) return "(NUM)";
-    return "(UNK)"; // fallback
+    return "(UNK)";
 }
 
 static int measureWidth(const Parser::Node* node)
@@ -130,7 +229,6 @@ static void renderTreeLabeled(const Parser::Node* node,
     int valWidth = (int)label.size();
     int start = col - valWidth / 2;
 
-    // Draw node with label
     for (int i = 0; i < valWidth; ++i) {
         int x = start + i;
         if (row >= 0 && row < (int)grid.size() &&
@@ -145,14 +243,12 @@ static void renderTreeLabeled(const Parser::Node* node,
     int rightW = measureWidth(node->right);
     int gap = std::max(6, (leftW + rightW) / 4 + 2);
 
-    // Left child + connector
     if (node->left) {
         int childCol = col - gap;
         grid[row + 1][col - gap / 2] = '/';
         renderTreeLabeled(node->left, grid, row + 2, childCol, width / 2);
     }
 
-    // Right child + connector
     if (node->right) {
         int childCol = col + gap;
         grid[row + 1][col + gap / 2] = '\\';
@@ -174,7 +270,6 @@ void Parser::printSyntaxTree()
     int width  = std::max(100, measureWidth(root) * 2);
 
     std::vector<std::string> grid(rows, std::string(width, ' '));
-
     renderTreeLabeled(root, grid, 0, width / 2, width);
 
     for (auto& line : grid) {

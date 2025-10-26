@@ -79,6 +79,16 @@ std::vector<Token> Lexer::tokenize()
         }
     }
 
+    for (const auto &t : tokens) 
+    {
+        if (t.type == TokenType::INVALID) {
+            std::cerr << "Lexical error: invalid token '"
+                    << t.value << "' at index " << t.start_pos << std::endl;
+        }
+    }
+
+
+
     return tokens;
 }
 

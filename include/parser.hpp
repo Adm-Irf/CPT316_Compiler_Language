@@ -29,6 +29,9 @@ private:
     Node *parseTerm();
     Node *parseFactor();
 
+    bool errorOccurred = false;                 // <- stop after first error
+    void reportError(const std::string &msg);
+
     void printNode(const Node *, int);
     std::string tokenTypeToString(TokenType);
 

@@ -23,7 +23,8 @@ Code Explaination :
 cd OneDrive\Desktop\CPT316_Compiler_Language
 cd OneDrive\Documents\CPT316\CPT316_Compiler_Language
 x = 5 + y;
-k = (a - b) / (c d);
+k = (a * b) / (c d);
 k = (a * (b + c)) - ((d / e) + f);
 z = (((a + b) * (c - d)) / ((e + f) - (g / h))) + i;
+
 
