@@ -349,11 +349,11 @@ static void renderTreeLabeled(const Parser::Node *node, std::vector<std::string>
 void Parser::printSyntaxTree()
 {
     if (!root) {
-        std::cout << "Syntax tree is empty.\n";
+        std::cout << "Syntax tree is empty.";
         return;
     }
 
-    std::cout << "\n🌳 Syntax Tree (Annotated)\n\n";
+    std::cout << "Syntax Tree";
 
     int height = getTreeHeight(root);
     int rows = height * 2;
