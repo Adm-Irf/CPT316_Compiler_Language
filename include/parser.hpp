@@ -15,8 +15,7 @@ public:
         Node *right = nullptr;      
 
         // constructor
-        Node(const std::string &val, TokenType t, Node *l = nullptr, Node *r = nullptr)
-            : value(val), type(t), left(l), right(r) {}
+        Node(const std::string &val, TokenType t, Node *l = nullptr, Node *r = nullptr): value(val), type(t), left(l), right(r) {}
     };
 
 private: 
