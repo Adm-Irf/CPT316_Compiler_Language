@@ -2,6 +2,7 @@
 #include "../include/parser.hpp"
 #include <iostream>
 #include <vector>
+#include <iomanip>
 
 int main()
 {
@@ -12,26 +13,24 @@ int main()
     Lexer lexer(input);
     std::vector<Token> tokens = lexer.tokenize();
 
-    // Stop if the lexer found invalid tokens
-    bool hasInvalid = false;
-    for (const auto &t : tokens)
-        if (t.type == TokenType::INVALID)
-            hasInvalid = true;
-
-    if (hasInvalid) {
-        std::cerr << "Cannot proceed: fix lexical errors first.\n";
-        return 1;
-    }
-
     Parser parser(tokens);
-    if (parser.parse())
+    bool success = parser.parse();
+
+    if (success && !parser.hasErrors())
     {
         std::cout << "Valid syntax.\n";
         parser.printSyntaxTree();
-        lexer.summarize(); // Print summary which is tokens types + the number of time they appeared in the statement.
     }
     else
     {
-        std::cerr << "Syntax error.\n";
+        std::cout << "Errors found:\n";
+        parser.printErrors();
+        lexer.summarize();
     }
+
+    std::cout << "Token Summary\n";
+    lexer.summarize();
+    std::cout << std::endl;
+
+    return 0;
 }

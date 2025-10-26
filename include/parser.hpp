@@ -22,15 +22,15 @@ public:
 private: 
     const std::vector<Token> &tokens;
     size_t pos;
-    Node *root = nullptr; // store the root of the tree
+    Node *root = nullptr; 
 
     Node *parseStatement();
     Node *parseExpr();
     Node *parseTerm();
     Node *parseFactor();
 
-    bool errorOccurred = false;                 // <- stop after first error
-    void reportError(const std::string &msg);
+    bool errorOccurred = false;                
+    std::vector<std::string> errorMessages;
 
     void printNode(const Node *, int);
     std::string tokenTypeToString(TokenType);
@@ -41,6 +41,10 @@ private:
 
 public:
     explicit Parser(const std::vector<Token> &toks);
-    bool parse();           // returns true if grammar valid
-    void printSyntaxTree(); // simple visualization
+    bool parse();           
+    void printSyntaxTree(); 
+    void reportError(const std::string &msg);              
+    void reportError(const std::string &msg, int position); 
+    void printErrors() const;
+    bool hasErrors() const;
 };
