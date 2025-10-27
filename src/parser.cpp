@@ -64,6 +64,7 @@ bool Parser::parse()
         return false;
     }
 
+    // Handle is Missing ; at te end of code
     if (pos < tokens.size() && tokens[pos].value == ";") {
         ++pos;
     } else {
@@ -74,14 +75,19 @@ bool Parser::parse()
     if (pos < tokens.size()) {
         reportError("more expressions found after ';' (only one statement allowed).",
                     tokens[pos].start_pos);
-    }
+        
+        // RECOVERY: Try to parse the next statement(s) to find more errors
+        while (pos < tokens.size()) {
+            Node* nextStatement = parseStatement();
+            // We discard the resulting node, but parseStatement()
+            // will have reported any errors it found.
 
-    while (pos < tokens.size()) {
-        if (tokens[pos].type == TokenType::INVALID)
-            reportError("invalid token '" + tokens[pos].value + "'", tokens[pos].start_pos);
-        else
-            reportError("unexpected token '" + tokens[pos].value + "'", tokens[pos].start_pos);
-        ++pos;
+            if (pos < tokens.size() && tokens[pos].value == ";") {
+                ++pos;
+            } 
+            // If it's not a ';', the next loop of parseStatement()
+            // will report an error, which is correct.
+        }
     }
 
     bool treeHasError = containsErrorNode(root);
@@ -90,19 +96,22 @@ bool Parser::parse()
 
 Parser::Node *Parser::parseStatement()
 {
-    // Must start with identifier
+    Node *left = nullptr;
+
     if (pos >= tokens.size() || tokens[pos].type != TokenType::IDENTIFIER) {
         if (pos < tokens.size())
-            reportError("statement must start with an identifier, got '" +
+            reportError("statement must start with an identifier, starts with '" +
                         tokens[pos].value + "'", tokens[pos].start_pos);
         else
             reportError("statement must start with an identifier.");
-        if (pos < tokens.size()) ++pos; 
-        return nullptr;
+        
+        left = new Node("error_id", TokenType::INVALID);
+        
     }
-
-    Node *left = new Node(tokens[pos].value, TokenType::IDENTIFIER);
-    ++pos;
+    else {
+        left = new Node(tokens[pos].value, TokenType::IDENTIFIER);
+        ++pos;
+    }
 
     if (pos >= tokens.size() || tokens[pos].value != "=") {
         if (pos < tokens.size())
@@ -124,19 +133,6 @@ Parser::Node *Parser::parseStatement()
     if (pos < tokens.size() && tokens[pos].value == ";") {
         reportError("missing right-hand expression after '='.", tokens[pos].start_pos);
     }
-
-        size_t look = pos;
-        while (look < tokens.size() && tokens[look].value != ";")
-        {
-            if (tokens[look].value == "=") {
-                reportError("chained assignment is not allowed (found '=' in expression).",
-                            tokens[look].start_pos);
-               while (look < tokens.size() && tokens[look].value != ";") ++look;
-                pos = look; 
-                break;
-            }
-            ++look;
-        }
 
     // expression
     Node *right = parseExpr();
@@ -176,12 +172,28 @@ Parser::Node *Parser::parseExpr()
     {
         const auto &t = tokens[pos];
         bool isEnd = (t.value == ")" || t.value == ";");
-        if (isFactorStart(t) && !isEnd) {
+
+        if (t.value == "=") {
+            reportError("chained assignment is not allowed (found '=' in expression).", t.start_pos);
+            ++pos; // RECOVERY: Skip the '=' token
+            
+            // Check for the next error (missing operator)
+            if (pos < tokens.size()) {
+                const auto &t_next = tokens[pos];
+                bool isEnd_next = (t_next.value == ")" || t_next.value == ";");
+                if (isFactorStart(t_next) && !isEnd_next) {
+                    reportError("missing operator before '" + t_next.value + "'", t_next.start_pos);
+                    parseTerm(); // Parse and discard
+                }
+            }
+        }
+        else if (isFactorStart(t) && !isEnd) {
             reportError("missing operator before '" + t.value + "'", t.start_pos);
-            ++pos;
+            // Try to parse the unexpected term to find more errors
+            // within it (like '()') and consume its tokens.
+            parseTerm(); // We call it and discard the result.
         }
     }
-
     return left;
 }
 
@@ -213,9 +225,24 @@ Parser::Node *Parser::parseTerm()
         const auto &t = tokens[pos];
         bool isAdditive = (t.value == "+" || t.value == "-");
         bool isEnd = (t.value == ")" || t.value == ";");
-        if (isFactorStart(t) && !isAdditive && !isEnd) {
-            reportError("missing operator before '" + t.value + "'", t.start_pos);
+
+        if (t.value == "=") {
+             reportError("chained assignment is not allowed (found '=' in expression).", t.start_pos);
             ++pos;
+            
+            if (pos < tokens.size()) {
+                const auto &t_next = tokens[pos];
+                bool isEnd_next = (t_next.value == ")" || t_next.value == ";");
+                bool isAdd_next = (t_next.value == "+" || t_next.value == "-");
+                if (isFactorStart(t_next) && !isEnd_next && !isAdd_next) {
+                    reportError("missing operator before '" + t_next.value + "'", t_next.start_pos);
+                    parseFactor();
+                }
+            }
+        }
+        else if (isFactorStart(t) && !isAdditive && !isEnd) {
+            reportError("missing operator before '" + t.value + "'", t.start_pos);
+            parseFactor(); 
         }
     }
 
@@ -260,15 +287,15 @@ Parser::Node *Parser::parseFactor()
     }
 
     if (t.value == "+" || t.value == "-") {
-        reportError("missing operand before '" + t.value + "'", t.start_pos);
+        reportError("unexpected operator '" + t.value + "' (skipping)", t.start_pos);
         ++pos; 
-        return new Node("error", TokenType::INVALID);
+        return parseFactor(); // RECOVERY: Try to parse again
     }
 
     if (t.value == "*" || t.value == "/") {
-        reportError("unexpected operator '" + t.value + "'", t.start_pos);
+        reportError("unexpected operator '" + t.value + "' (skipping)", t.start_pos);
         ++pos;
-        return new Node("error", TokenType::INVALID);
+        return parseFactor(); // RECOVERY: Try to parse again
     }
 
     if (t.value == ")" || t.value == ";") {
