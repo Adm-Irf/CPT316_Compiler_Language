@@ -12,7 +12,9 @@ public:
         std::string value;          // Actual Token string ("3","z","+")     
         TokenType type;             // Token Type (NUM,ID,OP)
         Node *left = nullptr;       // C++ default member initialization
-        Node *right = nullptr;      
+        Node *right = nullptr;
+        int x_pos = 0;
+        int y_pos = 0;  
 
         // constructor
         Node(const std::string &val, TokenType t, Node *l = nullptr, Node *r = nullptr): value(val), type(t), left(l), right(r) {}

@@ -324,54 +324,63 @@ static std::string classifyToken(const std::string &val)
     return "(UNK)";
 }
 
-static int measureWidth(const Parser::Node *node)
-{
-    if (!node) return 0;
-    std::string label = node->value + classifyToken(node->value);
-    int w = (int)label.size();
-    int left = measureWidth(node->left);
-    int right = measureWidth(node->right);
-    if (!node->left && !node->right) return w;
-    return std::max(4, left + right + 6);
-}
+// NEW printSyntaxTree in parser.cpp
 
-static void renderTreeLabeled(const Parser::Node *node, std::vector<std::string> &grid,int row, int col, int width)
+void assignCoordinates(Parser::Node* node, int depth, int& current_col)
 {
     if (!node) return;
 
+    // 1. Go Left
+    // Add 2 to depth for child row (to make space for / \)
+    assignCoordinates(node->left, depth + 2, current_col);
+
+    // 2. Visit Root
     std::string label = node->value + classifyToken(node->value);
-    int valWidth = (int)label.size();
-    int start = col - valWidth / 2;
+    int label_width = (int)label.size();
 
-    for (int i = 0; i < valWidth; ++i) {
-        int x = start + i;
-        if (row >= 0 && row < (int)grid.size() &&
-            x >= 0 && x < (int)grid[row].size())
-            grid[row][x] = label[i];
+    // Assign coordinates
+    node->y_pos = depth;
+    node->x_pos = current_col + (label_width / 2);
+
+    // 3. Move the column counter
+    current_col += label_width + 1; // +1 for at least one space
+
+    // 4. Go Right
+    assignCoordinates(node->right, depth + 2, current_col);
+}
+
+// Helper to "stamp" the nodes and branches onto the grid
+void renderNodes(const Parser::Node* node, std::vector<std::string>& grid) {
+    if (!node) return;
+
+    // 1. Stamp the node label
+    std::string label = node->value + classifyToken(node->value);
+    int label_width = (int)label.size();
+    int start_col = node->x_pos - (label_width / 2);
+
+    for (int i = 0; i < label_width; ++i) {
+        if (node->y_pos < (int)grid.size() && (start_col + i) < (int)grid[0].size()) {
+            grid[node->y_pos][start_col + i] = label[i];
+        }
     }
 
-    if (!node->left && !node->right) return;
-
-    int leftW = measureWidth(node->left);
-    int rightW = measureWidth(node->right);
-    int gap = std::max(6, (leftW + rightW) / 4 + 2);
-
-    if (row + 1 < (int)grid.size()) {
-        if (node->left && col - gap / 2 >= 0 && col - gap / 2 < (int)grid[row + 1].size())
-            grid[row + 1][col - gap / 2] = '/';
-        if (node->right && col + gap / 2 >= 0 && col + gap / 2 < (int)grid[row + 1].size())
-            grid[row + 1][col + gap / 2] = '\\';
-    }
-
+    // 2. Stamp the branch for the left child
     if (node->left) {
-        int childCol = col - gap;
-        renderTreeLabeled(node->left, grid, row + 2, childCol, width / 2);
+        if (node->y_pos + 1 < (int)grid.size() && node->x_pos - 1 > 0) {
+             grid[node->y_pos + 1][node->x_pos - 1] = '/';
+        }
+        renderNodes(node->left, grid);
     }
+
+    // 3. Stamp the branch for the right child
     if (node->right) {
-        int childCol = col + gap;
-        renderTreeLabeled(node->right, grid, row + 2, childCol, width / 2);
+        if (node->y_pos + 1 < (int)grid.size() && node->x_pos + 1 < (int)grid[0].size()) {
+            grid[node->y_pos + 1][node->x_pos + 1] = '\\';
+        }
+        renderNodes(node->right, grid);
     }
 }
+
 
 void Parser::printSyntaxTree()
 {
@@ -380,15 +389,22 @@ void Parser::printSyntaxTree()
         return;
     }
 
-    std::cout << "Syntax Tree";
+    std::cout << "Syntax Tree\n\n\n";
 
+    // 1. Assign all coordinates
+    int current_col = 0;
     int height = getTreeHeight(root);
+    assignCoordinates(root, 0, current_col);
+
+    // 2. Create the grid
     int rows = height * 2;
-    int width = std::max(100, measureWidth(root) * 2);
+    int cols = current_col + 1; // Total width
+    std::vector<std::string> grid(rows, std::string(cols, ' '));
 
-    std::vector<std::string> grid(rows, std::string(width, ' '));
-    renderTreeLabeled(root, grid, 0, width / 2, width);
+    // 3. Render all nodes and branches
+    renderNodes(root, grid);
 
+    // 4. Print the grid
     for (auto &line : grid) {
         int end = (int)line.find_last_not_of(' ');
         if (end != std::string::npos)
