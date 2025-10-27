@@ -8,6 +8,7 @@
 #include <iomanip>
 using namespace std;
 
+// 1. Brief 
 Parser::Parser(const std::vector<Token> &toks)
     : tokens(toks), pos(0), errorOccurred(false) {}
 

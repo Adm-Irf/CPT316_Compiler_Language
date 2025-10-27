@@ -1,18 +1,18 @@
 #pragma once                // Header Guard
-#include "token.hpp"        // Include Token Class (enum TokenType & struct Token)
+#include "token.hpp"        // Include Token Definition
 #include <string>
 #include <vector>
 
-// Lexer Class converts source code text into tokens
+// Lexer Class converts source code text into vector of tokens
 class Lexer
 {
 
-// Private : Accessible only inside Lexer Class (Encapsulation)
+// Private Member
 private:
-    std::string input;      // Input string to be Tokenize
-    size_t pos;             // Current Index Position (Like Pointer) in input strings
+    std::string input;      // Input string to be Tokenized
+    size_t pos;             // Current Index Position in input strings
 
-    // Counter of Tokens
+    // Token Counter
     int IDENTIFIER;
     int NUMBER;
     int OPERATOR;
@@ -21,8 +21,9 @@ private:
     int STATEMENT_TERMINATOR;
     int INVALID;
 
+// Public Member
 public:
-    explicit Lexer(const std::string &text);    // Constructor (Initialize input string & reset counter)
+    explicit Lexer(const std::string &text);    // Constructor new Lexer
     std::vector<Token> tokenize();              // Scan input & returns a vector(list) of Token Object
-    void summarize();                           // Prints the summary Tokens Type Count (After Tokenization)
+    void summarize();                           // Prints the summary Tokens Type Count
 };

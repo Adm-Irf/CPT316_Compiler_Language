@@ -1,51 +1,53 @@
 #pragma once                // Header Guard
-#include "token.hpp"        // Include Token Class (enum TokenType & struct Token)
+#include "token.hpp"        // Include Token Definition
 #include <vector>
 
 class Parser
 {
 
-// Private : Accessible only inside Parser Class (Encapsulation)
+// Public Member (Need to define node before use in private member)
 public: 
-    struct Node          // Represent Node in syntax tree
+    struct Node                     // Represent Node in syntax tree
     {
-        std::string value;          // Actual Token string ("3","z","+")     
+        std::string value;          // Token Value ("1","a","+")    
         TokenType type;             // Token Type (NUM,ID,OP)
-        Node *left = nullptr;       // C++ default member initialization
+        Node *left = nullptr;       // Default member initialization
         Node *right = nullptr;
+
+        // Coordinate for printing tree
         int x_pos = 0;
         int y_pos = 0;  
 
-        // constructor
+        // Constructor (Check parameter format must be same)
         Node(const std::string &val, TokenType t, Node *l = nullptr, Node *r = nullptr): value(val), type(t), left(l), right(r) {}
     };
 
+    explicit Parser(const std::vector<Token> &toks);            // Contructor
+    bool parse();                                               // Parsing Function : Return true when successful (False when error)
+
+    void printSyntaxTree();                                     // Print generated Tree
+    bool hasErrors() const;                                     // Error Function : Return true when Error logged
+    void reportError(const std::string &msg);                   // Log Syntax Error Message
+    void reportError(const std::string &msg, int position);     // Same log but with position (override)
+    void printErrors() const;                                   // Print all logged error (can print more than 1) 
+
+// Private Member
 private: 
+    // Reference to Token Vector
     const std::vector<Token> &tokens;
     size_t pos;
     Node *root = nullptr; 
 
+    // Main Parsing Function
     Node *parseStatement();
     Node *parseExpr();
     Node *parseTerm();
     Node *parseFactor();
 
+    // Error Handling Function
     bool errorOccurred = false;                
     std::vector<std::string> errorMessages;
 
-    void printNode(const Node *, int);
-    std::string tokenTypeToString(TokenType);
-
+    // Tree calculation
     int getTreeHeight(const Node* node);
-    void fillTree(const Node* node, std::vector<std::string>& grid, int row, int col, int offset, int height);
-
-
-public:
-    explicit Parser(const std::vector<Token> &toks);
-    bool parse();           
-    void printSyntaxTree(); 
-    void reportError(const std::string &msg);              
-    void reportError(const std::string &msg, int position); 
-    void printErrors() const;
-    bool hasErrors() const;
 };
