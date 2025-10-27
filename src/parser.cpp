@@ -90,7 +90,6 @@ bool Parser::parse()
 
 Parser::Node *Parser::parseStatement()
 {
-    // Must start with identifier
     if (pos >= tokens.size() || tokens[pos].type != TokenType::IDENTIFIER) {
         if (pos < tokens.size())
             reportError("statement must start with an identifier, got '" +
