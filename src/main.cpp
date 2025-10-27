@@ -22,6 +22,7 @@ int main()
 
         // --- All of your original code now runs inside the loop ---
         Lexer lexer(input);
+
         std::vector<Token> tokens = lexer.tokenize();
 
         Parser parser(tokens);

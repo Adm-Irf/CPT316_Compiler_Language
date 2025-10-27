@@ -168,30 +168,29 @@ Parser::Node *Parser::parseExpr()
         left = new Node(op, TokenType::OPERATOR, left, right);
     }
     
-    if (pos < tokens.size())
+    // This 'if' check becomes a 'while' loop for error recovery
+    while (pos < tokens.size())
     {
         const auto &t = tokens[pos];
         bool isEnd = (t.value == ")" || t.value == ";");
+        if (isEnd) break; // Found a valid follower, exit loop
 
-        if (t.value == "=") {
-            reportError("chained assignment is not allowed (found '=' in expression).", t.start_pos);
-            ++pos; // RECOVERY: Skip the '=' token
-            
-            // Check for the next error (missing operator)
-            if (pos < tokens.size()) {
-                const auto &t_next = tokens[pos];
-                bool isEnd_next = (t_next.value == ")" || t_next.value == ";");
-                if (isFactorStart(t_next) && !isEnd_next) {
-                    reportError("missing operator before '" + t_next.value + "'", t_next.start_pos);
-                    parseTerm(); // Parse and discard
-                }
-            }
+        if (t.type == TokenType::INVALID) {
+            reportError("unexpected token '" + t.value + "'", t.start_pos);
+            ++pos; 
         }
-        else if (isFactorStart(t) && !isEnd) {
+        else if (t.value == "=") {
+            reportError("chained assignment is not allowed (found '=' in expression).", t.start_pos);
+            ++pos; 
+        }
+        else if (isFactorStart(t)) {
             reportError("missing operator before '" + t.value + "'", t.start_pos);
-            // Try to parse the unexpected term to find more errors
-            // within it (like '()') and consume its tokens.
-            parseTerm(); // We call it and discard the result.
+            parseTerm(); // Parse and discard
+        }
+        else {
+            // Any other unexpected token
+            reportError("unexpected token '" + t.value + "'", t.start_pos);
+            ++pos;
         }
     }
     return left;
@@ -200,7 +199,6 @@ Parser::Node *Parser::parseExpr()
 Parser::Node *Parser::parseTerm()
 {
     Node *left = parseFactor();
-    if (!left) left = new Node("error", TokenType::INVALID);
 
     while (pos < tokens.size() && isMulOp(tokens[pos].value))
     {
@@ -220,29 +218,30 @@ Parser::Node *Parser::parseTerm()
         left = new Node(op, TokenType::OPERATOR, left, right);
     }
 
-    if (pos < tokens.size())
+    // This 'if' check becomes a 'while' loop for error recovery
+    while (pos < tokens.size())
     {
         const auto &t = tokens[pos];
         bool isAdditive = (t.value == "+" || t.value == "-");
         bool isEnd = (t.value == ")" || t.value == ";");
+        if (isAdditive || isEnd) break; // Found a valid follower, exit loop
 
-        if (t.value == "=") {
+        if (t.type == TokenType::INVALID) {
+            reportError("unexpected token '" + t.value + "'", t.start_pos);
+            ++pos;
+        }
+        else if (t.value == "=") {
              reportError("chained assignment is not allowed (found '=' in expression).", t.start_pos);
             ++pos;
-            
-            if (pos < tokens.size()) {
-                const auto &t_next = tokens[pos];
-                bool isEnd_next = (t_next.value == ")" || t_next.value == ";");
-                bool isAdd_next = (t_next.value == "+" || t_next.value == "-");
-                if (isFactorStart(t_next) && !isEnd_next && !isAdd_next) {
-                    reportError("missing operator before '" + t_next.value + "'", t_next.start_pos);
-                    parseFactor();
-                }
-            }
         }
-        else if (isFactorStart(t) && !isAdditive && !isEnd) {
+        else if (isFactorStart(t)) {
             reportError("missing operator before '" + t.value + "'", t.start_pos);
-            parseFactor(); 
+            parseFactor(); // Parse and discard
+        }
+        else {
+            // Any other unexpected token
+            reportError("unexpected token '" + t.value + "'", t.start_pos);
+            ++pos;
         }
     }
 
