@@ -28,7 +28,7 @@ public:
     void printSyntaxTree();                                     // Print generated Tree
     bool hasErrors() const;                                     // Error Function : Return true when Error logged
     void reportError(const std::string &msg);                   // Log Syntax Error Message
-    void reportError(const std::string &msg, int position);     // Same log but with position (override)
+    void reportError(const std::string &msg, int position);     // Same log but with position (overload)
     void printErrors() const;                                   // Print all logged error (can print more than 1) 
 
 // Private Member
