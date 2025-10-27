@@ -25,7 +25,6 @@ int main()
     {
         std::cout << "Errors found:\n";
         parser.printErrors();
-        lexer.summarize();
     }
 
     std::cout << "Token Summary\n";
