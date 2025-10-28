@@ -7,9 +7,9 @@
 int main()
 {
     std::string input;
-    std::cout << "===================================================\n";
-    std::cout << "           Welcome to the Mini-Compiler\n";
-    std::cout << "===================================================\n";
+    std::cout << "==================================================\n";
+    std::cout << "      Welcome to the COMPY Language Compiler\n";
+    std::cout << "==================================================\n";
     // Loop (Easy for Testing)
     while (true)
     {   
