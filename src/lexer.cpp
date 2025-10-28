@@ -23,7 +23,7 @@ std::vector<Token> Lexer::tokenize()
             continue;
         }
 
-        if (std::islower(c))    // 2. identifier (All Lowercase)
+        if (std::islower(c))    // 2. Identifier (All Lowercase)
         { 
             std::string id(1, c);
             tokens.emplace_back(TokenType::IDENTIFIER, id, pos);
@@ -54,19 +54,19 @@ std::vector<Token> Lexer::tokenize()
             pos++;
             ASSIGNMENT++;
         }
-        else if (c == '(')  // 6. left Parenthesis
+        else if (c == '(')  // 6. Left Parentheses
         { 
             tokens.emplace_back(TokenType::LEFT_PAREN, "(", pos);
             pos++;
             PARENTHESES++;
         }
-        else if (c == ')')  // 7. Right Parenthesis
+        else if (c == ')')  // 7. Right Parentheses
         { 
             tokens.emplace_back(TokenType::RIGHT_PAREN, ")", pos);
             pos++;
             PARENTHESES++;
         }
-        else if (c == ';')  // 8. Statement terminator
+        else if (c == ';')  // 8. Statement Terminator
         {
             tokens.emplace_back(TokenType::STATEMENT_TERMINATOR, ";", pos);
             pos++;

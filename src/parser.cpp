@@ -64,7 +64,7 @@ bool Parser::parse()
     // Empty Input
     if (tokens.empty()) 
     {
-        reportError("empty input.");
+        reportError("Empty input.");
         return false;
     }
 
@@ -109,7 +109,7 @@ bool Parser::parse()
     return !hasErrors() && !treeHasError && root != nullptr;
 }
 
-// 6.2 The rules (Grammer) | [ <stmt> -> id = <expr> ; ]
+// 6.2 The rules (Grammar) | [ <stmt> -> id = <expr> ; ]
 Parser::Node *Parser::parseStatement()
 {
     Node *left = nullptr;
@@ -350,7 +350,7 @@ Parser::Node *Parser::parseFactor()
 }
 
 // 7. Tree Printing Function
-// 7.1 Get tree height to extimate the wide-ness (Tapi lari sikit)
+// 7.1 Get tree height to estimate the wideness (Tapi lari sikit)
 int Parser::getTreeHeight(const Node *node)
 {
     if (!node) return 0;
@@ -434,7 +434,10 @@ void Parser::printSyntaxTree()
         return;
     }
 
-    std::cout << "Syntax Tree\n\n\n";
+    std::cout << " \n";
+    std::cout << "---------------------------------------\n";
+    std::cout << "             Syntax Tree\n";
+    std::cout << "---------------------------------------\n\n";
 
     // A. Assign all coordinates
     int current_col = 0;
