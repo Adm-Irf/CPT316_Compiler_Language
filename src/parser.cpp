@@ -6,7 +6,6 @@
 #include <string>
 #include <algorithm>
 #include <iomanip>
-using namespace std;
 
 // 1. Construct New parser
 Parser::Parser(const std::vector<Token> &toks): tokens(toks), pos(0), errorOccurred(false) {}
