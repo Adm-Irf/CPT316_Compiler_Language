@@ -6,9 +6,10 @@
 #include <string>
 #include <algorithm>
 #include <iomanip>
+#include <sstream>
 
 // 1. Construct New parser
-Parser::Parser(const std::vector<Token> &toks): tokens(toks), pos(0), errorOccurred(false) {}
+Parser::Parser(const std::vector<Token> &toks) : tokens(toks), pos(0), errorOccurred(false) {}
 
 // 2. Differentiate type of Token (For Precedence)
 static inline bool isAddSubOp(const std::string &s) { return s == "+" || s == "-"; }
@@ -21,10 +22,12 @@ static inline bool isFactorStart(const Token &t)
 }
 
 // 4. Check if Tree have error Nodes
-static bool containsErrorNode(const Parser::Node* node)
+static bool containsErrorNode(const Parser::Node *node)
 {
-    if (!node) return false;
-    if (node->value == "error") return true;
+    if (!node)
+        return false;
+    if (node->value == "error")
+        return true;
     return containsErrorNode(node->left) || containsErrorNode(node->right);
 }
 
@@ -61,7 +64,7 @@ bool Parser::parse()
     pos = 0;
 
     // Empty Input
-    if (tokens.empty()) 
+    if (tokens.empty())
     {
         reportError("Empty input.");
         return false;
@@ -70,36 +73,38 @@ bool Parser::parse()
     // A. Parse the first only allowed statement
     root = parseStatement();
 
-    if (!root) 
+    if (!root)
     {
         // If critical error in parseStatement then skip
-        while (pos < tokens.size()) 
+        while (pos < tokens.size())
             ++pos; // Continue remaining Token
         return false;
     }
 
     // B. Check Statement Terminator
-    if (pos < tokens.size() && tokens[pos].value == ";") 
+    if (pos < tokens.size() && tokens[pos].value == ";")
     {
         ++pos;
-    } 
-    else { // If termiantor not found
+    }
+    else
+    { // If terminator not found
         int p = (pos < (int)tokens.size() ? tokens[pos].start_pos : -1);
         reportError("missing statement terminator ';'.", p);
     }
 
     // C. Check Extra token after a termination
-    if (pos < tokens.size()) 
+    if (pos < tokens.size())
     {
         reportError("more expressions found after ';' (only one statement allowed).", tokens[pos].start_pos);
-        
+
         // Need to read it all (although we only take the First Expression)
         while (pos < tokens.size())
         {
-            parseStatement();   // Parse and discord (Need to log error/Read it all)
-            if (pos < tokens.size() && tokens[pos].value == ";") {
+            parseStatement(); // Parse and discord (Need to log error/Read it all)
+            if (pos < tokens.size() && tokens[pos].value == ";")
+            {
                 ++pos;
-            } 
+            }
         }
     }
 
@@ -114,7 +119,7 @@ Parser::Node *Parser::parseStatement()
     Node *left = nullptr;
 
     // A. Need an Identifier at start
-    if (pos >= tokens.size() || tokens[pos].type != TokenType::IDENTIFIER) 
+    if (pos >= tokens.size() || tokens[pos].type != TokenType::IDENTIFIER)
     {
         reportError("statement must start with an identifier, cannot start with '" + tokens[pos].value + "'", tokens[pos].start_pos);
         // Need to continue Parsing Till the end
@@ -127,7 +132,7 @@ Parser::Node *Parser::parseStatement()
     }
 
     // B. Assignment Operator After Identifier
-    if (pos >= tokens.size() || tokens[pos].value != "=") 
+    if (pos >= tokens.size() || tokens[pos].value != "=")
     {
         if (pos < tokens.size())
             reportError("missing '=' after identifier before '" + tokens[pos].value + "'", tokens[pos].start_pos);
@@ -135,27 +140,32 @@ Parser::Node *Parser::parseStatement()
             reportError("missing '=' after identifier.");
 
         // Skip Token
-        if (pos < tokens.size()) ++pos; 
-    } 
-    else    // Continue to check if "==" occur
+        if (pos < tokens.size())
+            ++pos;
+    }
+    else // Continue to check if "==" occur
     {
-        if ((pos + 1) < tokens.size() && tokens[pos + 1].value == "=") 
+        if ((pos + 1) < tokens.size() && tokens[pos + 1].value == "=")
         {
             reportError("extra assignment '==' is not allowed.", tokens[pos].start_pos);
             pos += 2; // Skip both "==" becouse it has different meaning (Same as)
-        } else {
-            ++pos; 
+        }
+        else
+        {
+            ++pos;
         }
     }
 
     // C. Check for empty Right Parenthesis
-    if (pos < tokens.size() && tokens[pos].value == ";") {
+    if (pos < tokens.size() && tokens[pos].value == ";")
+    {
         reportError("missing right-hand expression after '='.", tokens[pos].start_pos);
     }
 
     // D. Parse the right-hand Expression
     Node *right = parseExpr();
-    if (!right) right = new Node("error", TokenType::INVALID);
+    if (!right)
+        right = new Node("error", TokenType::INVALID);
 
     // Return the assignment Node
     return new Node("=", TokenType::ASSIGNMENT, left, right);
@@ -171,10 +181,10 @@ Parser::Node *Parser::parseExpr()
     if (!left)
     {
         // To create the Error Node
-        if (pos < tokens.size() && (tokens[pos].value == "+" || tokens[pos].value == "-")) 
+        if (pos < tokens.size() && (tokens[pos].value == "+" || tokens[pos].value == "-"))
         {
             reportError("missing operand before '" + tokens[pos].value + "'", tokens[pos].start_pos);
-            ++pos; 
+            ++pos;
         }
         left = new Node("error", TokenType::INVALID);
     }
@@ -186,7 +196,8 @@ Parser::Node *Parser::parseExpr()
         ++pos;
 
         Node *right = parseTerm();
-        if (!right) {
+        if (!right)
+        {
             reportError("missing operand after '" + op + "'", tokens[pos - 1].start_pos);
             right = new Node("error", TokenType::INVALID);
         }
@@ -194,28 +205,33 @@ Parser::Node *Parser::parseExpr()
         // For Building tree node
         left = new Node(op, TokenType::OPERATOR, left, right);
     }
-    
+
     // Loop for error when unexpected tokens
     while (pos < tokens.size())
     {
         const auto &t = tokens[pos];
         bool isEnd = (t.value == ")" || t.value == ";");
-        if (isEnd) break; 
+        if (isEnd)
+            break;
 
         // List of Print Error
-        if (t.type == TokenType::INVALID) {
+        if (t.type == TokenType::INVALID)
+        {
             reportError("unexpected token '" + t.value + "'", t.start_pos);
-            ++pos; 
+            ++pos;
         }
-        else if (t.value == "=") {
+        else if (t.value == "=")
+        {
             reportError("chained assignment is not allowed (found '=' in expression).", t.start_pos);
-            ++pos; 
+            ++pos;
         }
-        else if (isFactorStart(t)) {
+        else if (isFactorStart(t))
+        {
             reportError("missing operator before '" + t.value + "'", t.start_pos);
             parseTerm(); // Parse and discard
         }
-        else { // Any other unexpected token
+        else
+        { // Any other unexpected token
             reportError("unexpected token '" + t.value + "'", t.start_pos);
             ++pos;
         }
@@ -237,13 +253,15 @@ Parser::Node *Parser::parseTerm()
 
         Node *right = parseFactor();
         // Check for missing operand
-        if (!right) {
+        if (!right)
+        {
             reportError("missing operand after '" + op + "'", tokens[pos - 1].start_pos);
             right = new Node("error", TokenType::INVALID);
         }
 
         // Check for division by 0 (Logically error)
-        if (op == "/" && right && right->type == TokenType::NUMBER && right->value == "0") {
+        if (op == "/" && right && right->type == TokenType::NUMBER && right->value == "0")
+        {
             reportError("division by zero is not allowed.", tokens[pos - 1].start_pos);
         }
 
@@ -257,22 +275,27 @@ Parser::Node *Parser::parseTerm()
         const auto &t = tokens[pos];
         bool isAdditive = (t.value == "+" || t.value == "-");
         bool isEnd = (t.value == ")" || t.value == ";");
-        if (isAdditive || isEnd) break;
+        if (isAdditive || isEnd)
+            break;
 
         // List of Print Error
-        if (t.type == TokenType::INVALID) {
+        if (t.type == TokenType::INVALID)
+        {
             reportError("unexpected token '" + t.value + "'", t.start_pos);
             ++pos;
         }
-        else if (t.value == "=") {
-             reportError("chained assignment is not allowed (found '=' in expression).", t.start_pos);
+        else if (t.value == "=")
+        {
+            reportError("chained assignment is not allowed (found '=' in expression).", t.start_pos);
             ++pos;
         }
-        else if (isFactorStart(t)) {
+        else if (isFactorStart(t))
+        {
             reportError("missing operator before '" + t.value + "'", t.start_pos);
             parseFactor(); // Parse and discard
         }
-        else {  // Any other unexpected Token
+        else
+        { // Any other unexpected Token
             reportError("unexpected token '" + t.value + "'", t.start_pos);
             ++pos;
         }
@@ -284,7 +307,8 @@ Parser::Node *Parser::parseTerm()
 // 6.5 Parse a factor (NUM,ID,EXPR) \ [ <factor> -> NUMBER | IDENTIFIER | '(' <expr> ') ]
 Parser::Node *Parser::parseFactor()
 {
-    if (pos >= tokens.size()) {
+    if (pos >= tokens.size())
+    {
         reportError("unexpected end of expression.");
         return nullptr;
     }
@@ -292,15 +316,18 @@ Parser::Node *Parser::parseFactor()
     const auto &t = tokens[pos];
 
     // A. Number or Identifier
-    if (t.type == TokenType::IDENTIFIER || t.type == TokenType::NUMBER) {
+    if (t.type == TokenType::IDENTIFIER || t.type == TokenType::NUMBER)
+    {
         ++pos;
         return new Node(t.value, t.type);
     }
 
     // B. Parenthesis
-    if (t.value == "(") {
+    if (t.value == "(")
+    {
         // Check for empthy Parenthesis
-        if ((pos + 1) < tokens.size() && tokens[pos + 1].value == ")") {
+        if ((pos + 1) < tokens.size() && tokens[pos + 1].value == ")")
+        {
             reportError("empty parenthesis '()' is not a valid factor.", tokens[pos].start_pos);
             pos += 2; // Discard both and continue
             return new Node("error", TokenType::INVALID);
@@ -308,10 +335,11 @@ Parser::Node *Parser::parseFactor()
 
         // If found then continue
         ++pos;
-        Node *expr = parseExpr();   // Parse inner-Expression
+        Node *expr = parseExpr(); // Parse inner-Expression
 
         // Need to Close Parenthesis
-        if (pos >= tokens.size() || tokens[pos].value != ")") {
+        if (pos >= tokens.size() || tokens[pos].value != ")")
+        {
             if (pos < tokens.size())
                 reportError("missing closing parenthesis before '" + tokens[pos].value + "'", tokens[pos].start_pos);
             else
@@ -320,115 +348,329 @@ Parser::Node *Parser::parseFactor()
         }
 
         // If Close parenthesis found. continue
-        ++pos; 
+        ++pos;
         return expr;
     }
 
     // C. Unexpected Token (if found 2 in one after another)
-    if (t.value == "+" || t.value == "-") {
+    if (t.value == "+" || t.value == "-")
+    {
         reportError("unexpected operator '" + t.value + "' (skipping)", t.start_pos);
-        ++pos; 
+        ++pos;
         return parseFactor(); // Try to parse again
     }
 
-    if (t.value == "*" || t.value == "/") {
+    if (t.value == "*" || t.value == "/")
+    {
         reportError("unexpected operator '" + t.value + "' (skipping)", t.start_pos);
         ++pos;
         return parseFactor(); // Try to parse again
     }
 
     // End of expression
-    if (t.value == ")" || t.value == ";") {
+    if (t.value == ")" || t.value == ";")
+    {
         return nullptr; // To signal missing operand (Refer back)
     }
 
     // Catch all error
     reportError("unexpected token '" + t.value + "'", t.start_pos);
-    ++pos; // 
+    ++pos; //
     return nullptr;
 }
 
 // 7. Tree Printing Function
 // 7.1 Get tree height to estimate the wideness (Tapi lari sikit)
-int Parser::getTreeHeight(const Node *node)
+int Parser::getTreeHeight(const Node *node) const
 {
-    if (!node) return 0;
+    if (!node)
+        return 0;
     return 1 + std::max(getTreeHeight(node->left), getTreeHeight(node->right));
 }
 
-// 7.2 Print the Name in Tree 
+// 7.2 Print the Name in Tree
 static std::string classifyToken(const std::string &val)
 {
-    if (val == "=")        return "(ASSIGN)";
-    if (val == "+" || val == "-" || val == "*" || val == "/") return "(OP)";
-    if (val == "(" || val == ")") return "(PAREN)";
-    if (val == ";")        return "(END)";
-    if (!val.empty() && std::isalpha(static_cast<unsigned char>(val[0]))) return "(ID)";
-    if (!val.empty() && std::isdigit(static_cast<unsigned char>(val[0]))) return "(NUM)";
+    if (val == "=")
+        return "(ASSIGN)";
+    if (val == "+" || val == "-" || val == "*" || val == "/")
+        return "(OP)";
+    if (val == "(" || val == ")")
+        return "(PAREN)";
+    if (val == ";")
+        return "(END)";
+    if (!val.empty() && std::isalpha(static_cast<unsigned char>(val[0])))
+        return "(ID)";
+    if (!val.empty() && std::isdigit(static_cast<unsigned char>(val[0])))
+        return "(NUM)";
     return "(UNK)";
 }
 
-// 7.3 In-Order Transversal Tree (using x,y coordinate)
-void assignCoordinates(Parser::Node* node, int depth, int& current_col)
+using display_rows = std::vector<std::vector<Parser::cell_display>>;
+display_rows Parser::get_row_display() const
 {
-    if (!node) return;
+    // start off by traversing the tree to
+    // build a vector of vectors of Node pointers
+    std::vector<Node *> traversal_stack;
+    std::vector<std::vector<Node *>> rows;
+    if (!root)
+        return display_rows();
 
-    // A. Go Left
-    // Add 2 to depth for child row (to make space for / \)
-    assignCoordinates(node->left, depth + 2, current_col);
+    Node *p = root;
+    const int max_depth = getTreeHeight(root);
+    rows.resize(max_depth);
+    int depth = 0;
+    for (;;)
+    {
+        // Max-depth Nodes are always a leaf or null
+        // This special case blocks deeper traversal
+        if (depth == max_depth - 1)
+        {
+            rows[depth].push_back(p);
+            if (depth == 0)
+                break;
+            --depth;
+            continue;
+        }
 
-    // B. Visit Root
-    std::string label = node->value + classifyToken(node->value);
-    int label_width = (int)label.size();
+        // First visit to node?  Go to left child.
+        if (traversal_stack.size() == depth)
+        {
+            rows[depth].push_back(p);
+            traversal_stack.push_back(p);
+            if (p)
+                p = p->left;
+            ++depth;
+            continue;
+        }
 
-    // Assign coordinates
-    node->y_pos = depth;
-    node->x_pos = current_col + (label_width / 2);
+        // Odd child count? Go to right child.
+        if (rows[depth + 1].size() % 2)
+        {
+            p = traversal_stack.back();
+            if (p)
+                p = p->right;
+            ++depth;
+            continue;
+        }
 
-    // C. Move the column counter
-    current_col += label_width + 1; // +1 for at least one space
+        // Time to leave if we get here
 
-    // D. Go Right
-    assignCoordinates(node->right, depth + 2, current_col);
+        // Exit loop if this is the root
+        if (depth == 0)
+            break;
+
+        traversal_stack.pop_back();
+        p = traversal_stack.back();
+        --depth;
+    }
+
+    // Use rows of Node pointers to populate rows of cell_display structs.
+    // All possible slots in the tree get a cell_display struct,
+    // so if there is no actual Node at a struct's location,
+    // its boolean "present" field is set to false.
+    // The struct also contains a string representation of
+    // its Node's value, created using a std::stringstream object.
+    display_rows rows_disp;
+    std::stringstream ss;
+    for (const auto &row : rows)
+    {
+        rows_disp.emplace_back();
+        for (Node *pn : row)
+        {
+            if (pn)
+            {
+                ss << pn->value;
+                rows_disp.back().push_back(cell_display(ss.str()));
+                ss = std::stringstream();
+            }
+            else
+            {
+                rows_disp.back().push_back(cell_display());
+            }
+        }
+    }
+    return rows_disp;
 }
 
-// 7.4 Put the nodes and branches onto the grid
-void renderNodes(const Parser::Node* node, std::vector<std::string>& grid) {
-    if (!node) return;
+// row_formatter takes the vector of rows of cell_display structs
+// generated by get_row_display and formats it into a test representation
+// as a vector of strings
+std::vector<std::string> Parser::row_formatter(const display_rows &rows_disp) const
+{
+    using s_t = std::string::size_type;
 
-    // A. Put Node Label
-    std::string label = node->value + classifyToken(node->value);
-    int label_width = (int)label.size();
-    int start_col = node->x_pos - (label_width / 2);
-
-    for (int i = 0; i < label_width; ++i) {
-
-        // Avoid writting outside grid
-        if (node->y_pos < (int)grid.size() && (start_col + i) < (int)grid[0].size()) { grid[node->y_pos][start_col + i] = label[i];
+    // First find the maximum value string length and put it in cell_width
+    s_t cell_width = 0;
+    for (const auto &row_disp : rows_disp)
+    {
+        for (const auto &cd : row_disp)
+        {
+            if (cd.present && cd.valstr.length() > cell_width)
+            {
+                cell_width = cd.valstr.length();
+            }
         }
     }
 
-    // B. Put branch for the left child
-    if (node->left) {
-        if (node->y_pos + 1 < (int)grid.size() && node->x_pos - 1 > 0) {
-             grid[node->y_pos + 1][node->x_pos - 1] = '/';
+    // make sure the cell_width is an odd number
+    if (cell_width % 2 == 0)
+        ++cell_width;
+
+    // allows leaf nodes to be connected when they are
+    // all with size of a single character
+    if (cell_width < 3)
+        cell_width = 3;
+
+    // formatted_rows will hold the results
+    std::vector<std::string> formatted_rows;
+
+    // some of these counting variables are related,
+    // so its should be possible to eliminate some of them.
+    s_t row_count = rows_disp.size();
+
+    // this row's element count, a power of two
+    s_t row_elem_count = 1 << (row_count - 1);
+
+    // left_pad holds the number of space charactes at the beginning of the bottom row
+    s_t left_pad = 0;
+
+    // Work from the level of maximum depth, up to the root
+    // ("formatted_rows" will need to be reversed when done)
+    for (s_t r = 0; r < row_count; ++r)
+    {
+        const auto &cd_row = rows_disp[row_count - r - 1]; // r reverse-indexes the row
+        // "space" will be the number of rows of slashes needed to get
+        // from this row to the next.  It is also used to determine other
+        // text offsets.
+        s_t space = (s_t(1) << r) * (cell_width + 1) / 2 - 1;
+        // "row" holds the line of text currently being assembled
+        std::string row;
+        // iterate over each element in this row
+        for (s_t c = 0; c < row_elem_count; ++c)
+        {
+            // add padding, more when this is not the leftmost element
+            row += std::string(c ? left_pad * 2 + 1 : left_pad, ' ');
+            if (cd_row[c].present)
+            {
+                // This position corresponds to an existing Node
+                const std::string &valstr = cd_row[c].valstr;
+                // Try to pad the left and right sides of the value string
+                // with the same number of spaces.  If padding requires an
+                // odd number of spaces, right-sided children get the longer
+                // padding on the right side, while left-sided children
+                // get it on the left side.
+                s_t long_padding = cell_width - valstr.length();
+                s_t short_padding = long_padding / 2;
+                long_padding -= short_padding;
+                row += std::string(c % 2 ? short_padding : long_padding, ' ');
+                row += valstr;
+                row += std::string(c % 2 ? long_padding : short_padding, ' ');
+            }
+            else
+            {
+                // This position is empty, Nodeless...
+                row += std::string(cell_width, ' ');
+            }
         }
-        renderNodes(node->left, grid);  // Recursive
+        // A row of spaced-apart value strings is ready, add it to the result vector
+        formatted_rows.push_back(row);
+
+        // The root has been added, so this loop is finsished
+        if (row_elem_count == 1)
+            break;
+
+        // Add rows of forward- and back- slash characters, spaced apart
+        // to "connect" two rows' Node value strings.
+        // The "space" variable counts the number of rows needed here.
+        s_t left_space = space + 1;
+        s_t right_space = space - 1;
+        for (s_t sr = 0; sr < space; ++sr)
+        {
+            std::string row;
+            for (s_t c = 0; c < row_elem_count; ++c)
+            {
+                if (c % 2 == 0)
+                {
+                    row += std::string(c ? left_space * 2 + 1 : left_space, ' ');
+                    row += cd_row[c].present ? '/' : ' ';
+                    row += std::string(right_space + 1, ' ');
+                }
+                else
+                {
+                    row += std::string(right_space, ' ');
+                    row += cd_row[c].present ? '\\' : ' ';
+                }
+            }
+            formatted_rows.push_back(row);
+            ++left_space;
+            --right_space;
+        }
+        left_pad += space + 1;
+        row_elem_count /= 2;
     }
 
-    // C. Put branch for the right child
-    if (node->right) {
-        if (node->y_pos + 1 < (int)grid.size() && node->x_pos + 1 < (int)grid[0].size()) {
-            grid[node->y_pos + 1][node->x_pos + 1] = '\\';
-        }
-        renderNodes(node->right, grid); // Recursive
-    }   
+    // Reverse the result, placing the root node at the beginning (top)
+    std::reverse(formatted_rows.begin(), formatted_rows.end());
+
+    return formatted_rows;
+}
+
+// Trims an equal number of space characters from
+// the beginning of each string in the vector.
+// At least one string in the vector will end up beginning
+// with no space characters.
+void Parser::trim_rows_left(std::vector<std::string> &rows)
+{
+    if (!rows.size())
+        return;
+    auto min_space = rows.front().length();
+    for (const auto &row : rows)
+    {
+        auto i = row.find_first_not_of(' ');
+        if (i == std::string::npos)
+            i = row.length();
+        if (i == 0)
+            return;
+        if (i < min_space)
+            min_space = i;
+    }
+    for (auto &row : rows)
+    {
+        row.erase(0, min_space);
+    }
+}
+
+// Dumps a representation of the tree to cout
+void Parser::Dump() const
+{
+    const int d = getTreeHeight(root);
+
+    // If this tree is empty, tell someone
+    if (d == 0)
+    {
+        std::cout << " <empty tree>\n";
+        return;
+    }
+
+    // This tree is not empty, so get a list of node values...
+    const auto rows_disp = get_row_display();
+    // then format these into a text representation...
+    auto formatted_rows = row_formatter(rows_disp);
+    // then trim excess space characters from the left sides of the text...
+    trim_rows_left(formatted_rows);
+    // then dump the text to cout.
+    for (const auto &row : formatted_rows)
+    {
+        std::cout << ' ' << row << '\n';
+    }
 }
 
 // 8. Print the Tree
 void Parser::printSyntaxTree()
 {
-    if (!root) {
+    if (!root)
+    {
         std::cout << "Syntax tree is empty.";
         return;
     }
@@ -438,24 +680,8 @@ void Parser::printSyntaxTree()
     std::cout << "             Syntax Tree\n";
     std::cout << "---------------------------------------\n\n";
 
-    // A. Assign all coordinates
-    int current_col = 0;
-    int height = getTreeHeight(root);
-    assignCoordinates(root, 0, current_col);
+    // TODO: print here for tree DUMBASS
+    Dump();
 
-    // B. Create the grid (Matrix)
-    int rows = height * 2;
-    int cols = current_col + 1; // Total width
-    std::vector<std::string> grid(rows, std::string(cols, ' '));
-
-    // C. Render all nodes and branches
-    renderNodes(root, grid);
-
-    // D. Print the grid
-    for (auto &line : grid) {
-        int end = (int)line.find_last_not_of(' ');
-        if (end != std::string::npos)
-            std::cout << line.substr(0, end + 1) << "\n";
-    }
     std::cout << std::endl;
 }
