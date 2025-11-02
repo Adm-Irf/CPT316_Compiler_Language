@@ -480,7 +480,8 @@ display_rows Parser::get_row_display() const
         {
             if (pn)
             {
-                ss << pn->value;
+                // this affect how the value is printed on the tree
+                ss << pn->value << classifyToken(pn->value);
                 rows_disp.back().push_back(cell_display(ss.str()));
                 ss = std::stringstream();
             }
@@ -680,7 +681,7 @@ void Parser::printSyntaxTree()
     std::cout << "             Syntax Tree\n";
     std::cout << "---------------------------------------\n\n";
 
-    // TODO: print here for tree DUMBASS
+    // print the tree
     Dump();
 
     std::cout << std::endl;
