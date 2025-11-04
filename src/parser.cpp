@@ -643,7 +643,7 @@ void Parser::trim_rows_left(std::vector<std::string> &rows)
 }
 
 // Dumps a representation of the tree to cout
-void Parser::Dump() const
+void Parser::displayTree() const
 {
     const int d = getTreeHeight(root);
 
@@ -682,7 +682,7 @@ void Parser::printSyntaxTree()
     std::cout << "---------------------------------------\n\n";
 
     // print the tree
-    Dump();
+    displayTree();
 
     std::cout << std::endl;
 }
