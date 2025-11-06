@@ -63,6 +63,7 @@ bool Parser::parse()
     root = nullptr;
     pos = 0;
 
+    // Check for empty input (accidently press enter)
     if (tokens.empty())
     {
         reportError("Empty input.");
@@ -74,12 +75,10 @@ bool Parser::parse()
     // Parse statements separated by semicolons
     while (pos < tokens.size())
     {
-        // If we already parsed one statement and encounter another token that starts one,
-        // log that multiple statements are not allowed — but still continue parsing for errors.
+        // More that one statement (More statement after semicolon ;)
         if (!firstStatement)
         {
-            reportError("more expressions found after ';' (only one statement allowed).", 
-                        tokens[pos].start_pos);
+            reportError("more expressions found after ';' (only one statement allowed).", tokens[pos].start_pos);
         }
 
         Node *stmtRoot = parseStatement();
@@ -93,7 +92,7 @@ bool Parser::parse()
         }
         else
         {
-            // missing semicolon – recover until next ';' or end
+            // Missing semicolon
             int p = (pos < (int)tokens.size() ? tokens[pos].start_pos : -1);
             reportError("missing statement terminator ';'.", p);
             while (pos < tokens.size() && tokens[pos].value != ";")
@@ -102,14 +101,12 @@ bool Parser::parse()
                 ++pos;
         }
 
-        firstStatement = false; // next statement triggers "more expressions" error
+        firstStatement = false; // Next statement triggers "more expressions" error
     }
 
     bool treeHasError = containsErrorNode(root);
     return !hasErrors() && !treeHasError && root != nullptr;
 }
-
-
 
 // 6.2 The rules (Grammar) | [ <stmt> -> id = <expr> ; ]
 Parser::Node *Parser::parseStatement()
@@ -154,12 +151,10 @@ Parser::Node *Parser::parseStatement()
         }
     }
 
-    // C. Check for missing right-hand expression
-    // Only report if there is truly nothing to parse after '='
+    // C. Check for missing right-hand expression (Only report if nothing to parse after '=')
     if (pos >= tokens.size() || tokens[pos].value == ";")
     {
-        reportError("missing right-hand expression after '='.", 
-                    (pos < tokens.size() ? tokens[pos].start_pos : -1));
+        reportError("missing right-hand expression after '='.", (pos < tokens.size() ? tokens[pos].start_pos : -1));
     }
 
     // D. Parse the right-hand Expression
@@ -410,29 +405,11 @@ int Parser::getTreeHeight(const Node *node) const
     return 1 + std::max(getTreeHeight(node->left), getTreeHeight(node->right));
 }
 
-// 7.2 Print the Name in Tree
-static std::string classifyToken(const std::string &val)
-{
-    if (val == "=")
-        return "(ASSIGN)";
-    if (val == "+" || val == "-" || val == "*" || val == "/")
-        return "(OP)";
-    if (val == "(" || val == ")")
-        return "(PAREN)";
-    if (val == ";")
-        return "(END)";
-    if (!val.empty() && std::isalpha(static_cast<unsigned char>(val[0])))
-        return "(ID)";
-    if (!val.empty() && std::isdigit(static_cast<unsigned char>(val[0])))
-        return "(NUM)";
-    return "(UNK)";
-}
-
+// 7.2 Build row layout (static)
 using display_rows = std::vector<std::vector<Parser::cell_display>>;
 display_rows Parser::get_row_display() const
 {
-    // start off by traversing the tree to
-    // build a vector of vectors of Node pointers
+    // start off by traversing the tree to build a vector of vectors of Node pointers
     std::vector<Node *> traversal_stack;
     std::vector<std::vector<Node *>> rows;
     if (!root)
@@ -455,7 +432,7 @@ display_rows Parser::get_row_display() const
             continue;
         }
 
-        // First visit to node?  Go to left child.
+        // First visit to node? Go to left child.
         if (traversal_stack.size() == depth)
         {
             rows[depth].push_back(p);
@@ -477,7 +454,6 @@ display_rows Parser::get_row_display() const
         }
 
         // Time to leave if we get here
-
         // Exit loop if this is the root
         if (depth == 0)
             break;
@@ -487,12 +463,7 @@ display_rows Parser::get_row_display() const
         --depth;
     }
 
-    // Use rows of Node pointers to populate rows of cell_display structs.
-    // All possible slots in the tree get a cell_display struct,
-    // so if there is no actual Node at a struct's location,
-    // its boolean "present" field is set to false.
-    // The struct also contains a string representation of
-    // its Node's value, created using a std::stringstream object.
+    // Convert node pointer to printable strings
     display_rows rows_disp;
     std::stringstream ss;
     for (const auto &row : rows)
@@ -502,7 +473,7 @@ display_rows Parser::get_row_display() const
         {
             if (pn)
             {
-                // this affect how the value is printed on the tree
+                // This affect how the value is printed on the tree
                 ss << pn->value;
                 rows_disp.back().push_back(cell_display(ss.str()));
                 ss = std::stringstream();
@@ -516,9 +487,8 @@ display_rows Parser::get_row_display() const
     return rows_disp;
 }
 
-// row_formatter takes the vector of rows of cell_display structs
-// generated by get_row_display and formats it into a test representation
-// as a vector of strings
+// Row_formatter takes the vector of rows of cell_display structs
+// Generated by get_row_display and formats it into a test representation as a vector of strings
 std::vector<std::string> Parser::row_formatter(const display_rows &rows_disp) const
 {
     using s_t = std::string::size_type;
@@ -536,53 +506,45 @@ std::vector<std::string> Parser::row_formatter(const display_rows &rows_disp) co
         }
     }
 
-    // make sure the cell_width is an odd number
+    // Make sure the cell_width is an odd number
     if (cell_width % 2 == 0)
         ++cell_width;
 
-    // allows leaf nodes to be connected when they are
-    // all with size of a single character
+    // Allows leaf nodes to be connected when they are all with size of a single character
     if (cell_width < 3)
         cell_width = 3;
 
-    // formatted_rows will hold the results
+    // Formatted_rows will hold the results
     std::vector<std::string> formatted_rows;
-
-    // some of these counting variables are related,
-    // so its should be possible to eliminate some of them.
     s_t row_count = rows_disp.size();
-
-    // this row's element count, a power of two
-    s_t row_elem_count = 1 << (row_count - 1);
-
-    // left_pad holds the number of space charactes at the beginning of the bottom row
-    s_t left_pad = 0;
+    s_t row_elem_count = 1 << (row_count - 1);          // Element count, for seperation
+    s_t left_pad = 0;                                   // Hold num space at beginning of bottom row
 
     // Work from the level of maximum depth, up to the root
-    // ("formatted_rows" will need to be reversed when done)
     for (s_t r = 0; r < row_count; ++r)
     {
-        const auto &cd_row = rows_disp[row_count - r - 1]; // r reverse-indexes the row
-        // "space" will be the number of rows of slashes needed to get
-        // from this row to the next.  It is also used to determine other
-        // text offsets.
+        const auto &cd_row = rows_disp[row_count - r - 1];
+
+        // R reverse-indexes the row "space" will be the number of rows of slashes needed to get from this row to the next.  
+        // It is also used to determine other text offsets.
         s_t space = (s_t(1) << r) * (cell_width + 1) / 2 - 1;
+
         // "row" holds the line of text currently being assembled
         std::string row;
-        // iterate over each element in this row
+
+        // Iterate over each element in this row
         for (s_t c = 0; c < row_elem_count; ++c)
         {
-            // add padding, more when this is not the leftmost element
+            // Add padding, more when this is not the leftmost element
             row += std::string(c ? left_pad * 2 + 1 : left_pad, ' ');
             if (cd_row[c].present)
             {
                 // This position corresponds to an existing Node
                 const std::string &valstr = cd_row[c].valstr;
-                // Try to pad the left and right sides of the value string
-                // with the same number of spaces.  If padding requires an
-                // odd number of spaces, right-sided children get the longer
-                // padding on the right side, while left-sided children
-                // get it on the left side.
+
+                // Try to pad the left and right sides of the value string with the same number of spaces.  
+                // If padding requires an odd number of spaces, right-sided children get the longer
+                // padding on the right side, while left-sided children get it on the left side.
                 s_t long_padding = cell_width - valstr.length();
                 s_t short_padding = long_padding / 2;
                 long_padding -= short_padding;
@@ -592,10 +554,11 @@ std::vector<std::string> Parser::row_formatter(const display_rows &rows_disp) co
             }
             else
             {
-                // This position is empty, Nodeless...
+                // This position is empty
                 row += std::string(cell_width, ' ');
             }
         }
+
         // A row of spaced-apart value strings is ready, add it to the result vector
         formatted_rows.push_back(row);
 
@@ -603,8 +566,7 @@ std::vector<std::string> Parser::row_formatter(const display_rows &rows_disp) co
         if (row_elem_count == 1)
             break;
 
-        // Add rows of forward- and back- slash characters, spaced apart
-        // to "connect" two rows' Node value strings.
+        // Add rows of forward- and back- slash characters, spaced apart to "connect" two rows' Node value strings.
         // The "space" variable counts the number of rows needed here.
         s_t left_space = space + 1;
         s_t right_space = space - 1;
@@ -639,10 +601,8 @@ std::vector<std::string> Parser::row_formatter(const display_rows &rows_disp) co
     return formatted_rows;
 }
 
-// Trims an equal number of space characters from
-// the beginning of each string in the vector.
-// At least one string in the vector will end up beginning
-// with no space characters.
+// Trims an equal number of space characters from the beginning of each string in the vector.
+// At least one string in the vector will end up beginning with no space characters.
 void Parser::trim_rows_left(std::vector<std::string> &rows)
 {
     if (!rows.size())

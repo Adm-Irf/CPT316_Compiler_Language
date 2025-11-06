@@ -5,21 +5,23 @@
 class Parser
 {
 
-    // Public Member (Need to define node before use in private member)
+// Public Member (Need to define node before use in private member)
 public:
     struct Node // Represent Node in syntax tree
     {
         std::string value;    // Token Value ("1","a","+")
         TokenType type;       // Token Type (NUM,ID,OP)
-        Node *left = nullptr; // Default member initialization
+
+        // Default member initialization
+        Node *left = nullptr;
         Node *right = nullptr;
 
         // Constructor (Check parameter format must be same)
         Node(const std::string &val, TokenType t, Node *l = nullptr, Node *r = nullptr) : value(val), type(t), left(l), right(r) {}
     };
 
-    explicit Parser(const std::vector<Token> &toks); // Contructor
-    bool parse();                                    // Parsing Function : Return true when successful (False when error)
+    explicit Parser(const std::vector<Token> &toks);        // Contructor
+    bool parse();                                           // Parsing Function : Return true when successful (False when error)
 
     void printSyntaxTree();                                 // Print generated Tree
     bool hasErrors() const;                                 // Error Function : Return true when Error logged
@@ -27,6 +29,7 @@ public:
     void reportError(const std::string &msg, int position); // Same log but with position (overload)
     void printErrors() const;                               // Print all logged error (can print more than 1)
 
+    // Tree Display Check
     struct cell_display
     {
         std::string valstr;
@@ -35,14 +38,20 @@ public:
         cell_display(std::string valstr) : valstr(valstr), present(true) {}
     };
 
+    // Tree Layout
     using display_rows = std::vector<std::vector<Parser::cell_display>>; 
     display_rows get_row_display() const;
 
+    // Format Rows into display-able line
     std::vector<std::string> row_formatter(const display_rows &rows_disp) const;
+
+    // Tree starts left margin
     static void trim_rows_left(std::vector<std::string> &rows);
     void displayTree() const;
-    // Private Member
+
+// Private Member
 private:
+
     // Reference to Token Vector
     const std::vector<Token> &tokens;
     size_t pos;

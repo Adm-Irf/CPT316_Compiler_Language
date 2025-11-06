@@ -6,10 +6,11 @@
 
 int main()
 {
-    system("");
+    system("");             // Help enable ANSI color code
     std::string input;
     int testCount = 0;
 
+    // Starting Header
     std::cout << "\n\033[38;5;117m===========================================================\n";
     std::cout << "          Welcome to the COMPY Language Compiler\n";
     std::cout << "===========================================================\033[0m\n";
@@ -29,26 +30,28 @@ int main()
             break;
         }
 
-        testCount++;
+        // Test case count
+        testCount++; 
         std::cout << "\033[1;33m\n======================< TEST CASE " << testCount << " >======================\033[0m\n";
 
         // A. Lexing
         Lexer lexer(input);
-        std::vector<Token> tokens = lexer.tokenize();
+        std::vector<Token> tokens = lexer.tokenize();   // Token List
 
-        std::cout << "\033[1;33m";
-        lexer.printTokenStreamTable(tokens);
+        std::cout << "\033[1;33m";                      // Color Code
+        lexer.printTokenStreamTable(tokens);            // Token Stream Table Print
 
         // B. Parsing
         Parser parser(tokens);
-        bool success = parser.parse();
+        bool success = parser.parse();                  // Parse Token
 
         // C. Summary (Need to print even if fail - Requirement)
         lexer.summarize();
         std::cout << "\033[0m";
         std::cout << std::endl;
 
-        // D. Log and Report Error
+        // D. Error Handling
+        // Check lexical or syntax error exists
         bool hasLexicalError = lexer.hasLexicalErrors();
         bool hasSyntaxError = parser.hasErrors();
 
@@ -66,9 +69,10 @@ int main()
         }
         else if (success)
         {
+            // Valid syntax
             std::cout << "\033[1;32m---> Valid syntax.\n";
-            std::cout << "\033[38;5;121m";
-            parser.printSyntaxTree();
+            std::cout << "\033[38;5;121m";                      // Color Code Tree
+            parser.printSyntaxTree();                           // Print Tree
         }
 
         std::cout << "\033[38;5;117m\n=======================<COMPLETE>==========================\033[0m\n";

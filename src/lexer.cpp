@@ -1,9 +1,9 @@
 #include "../include/lexer.hpp"     // Reference to Class header
 #include <iostream>
+#include <iomanip>
 #include <string>
 #include <cctype>
 #include <map>
-#include <iomanip>   // <-- Required for std::setw and std::left
 
 // Constructor Lexer (Initialize counter to 0/start)
 Lexer::Lexer(const std::string &text) : input(text), pos(0), IDENTIFIER(0), NUMBER(0), OPERATOR(0), ASSIGNMENT(0), PARENTHESES(0), STATEMENT_TERMINATOR(0), INVALID(0) {}
@@ -24,7 +24,7 @@ std::vector<Token> Lexer::tokenize()
             continue;
         }
 
-        if (std::isalpha(c))    // 2. Identifier
+        if (std::isalpha(c))    // 2. Identifier (lowercase single)
         { 
             size_t start_pos = pos;
             std::string letters;
@@ -112,7 +112,7 @@ std::vector<Token> Lexer::tokenize()
     return tokens;
 }
 
-// Print the summary of Token Count
+// Print summary of Token Count
 void Lexer::summarize()
 {
     // Vector counts
@@ -136,7 +136,7 @@ void Lexer::summarize()
     }
 }
 
-// Print token stream table (formatted + numbering)
+// Print token stream table
 void Lexer::printTokenStreamTable(const std::vector<Token> &tokens)
 {
     std::cout << "\n-----------------------------------------------------------\n";
@@ -150,6 +150,7 @@ void Lexer::printTokenStreamTable(const std::vector<Token> &tokens)
               << std::setw(20) << "Token" << "\n";
     std::cout << "-----------------------------------------------------------\n";
 
+    // Categorized TokenType
     int i = 1;
     for (const auto &t : tokens)
     {
@@ -205,6 +206,7 @@ void Lexer::printTokenStreamTable(const std::vector<Token> &tokens)
     std::cout << "-----------------------------------------------------------\n\n";
 }
 
+// Print combined collected lexical error
 void Lexer::printLexicalErrors() const
 {
     if (!lexicalErrors.empty())
