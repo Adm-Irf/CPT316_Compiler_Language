@@ -38,7 +38,7 @@ void Parser::reportError(const std::string &msg) { reportError(msg, -1); }
 void Parser::reportError(const std::string &msg, int position)
 {
     std::string where = (position >= 0 ? std::to_string(position) : "end");
-    std::string full = "Syntax Error at position " + where + ": " + msg;
+    std::string full = "SyntaxError at position " + where + ": " + msg;
     errorMessages.push_back(full);
     errorOccurred = true;
 }
