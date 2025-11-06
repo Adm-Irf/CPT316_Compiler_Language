@@ -24,12 +24,28 @@ std::vector<Token> Lexer::tokenize()
             continue;
         }
 
-        if (std::islower(c))    // 2. Identifier (All Lowercase)
+        if (std::isalpha(c))    // 2. Identifier
         { 
-            std::string id(1, c);
-            tokens.emplace_back(TokenType::IDENTIFIER, id, pos);
-            pos++;
-            IDENTIFIER++;
+            size_t start_pos = pos;
+            std::string letters;
+            
+            while (pos < input.size() && std::isalpha(input[pos]))
+            {
+                letters += input[pos];
+                pos++;
+            }
+            
+            if (letters.length() == 1 && std::islower(letters[0]))
+            {
+                tokens.emplace_back(TokenType::IDENTIFIER, letters, start_pos);
+                IDENTIFIER++;
+            }
+            else
+            {
+                tokens.emplace_back(TokenType::INVALID, letters, start_pos);
+                INVALID++;
+                pos++;
+            }
         }
         else if (std::isdigit(c))   // 3. Number (Integer but cannot have space in between)
         { 
