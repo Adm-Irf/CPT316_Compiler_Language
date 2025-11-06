@@ -104,7 +104,7 @@ std::vector<Token> Lexer::tokenize()
         if (t.type == TokenType::INVALID)
         {
             std::stringstream ss;
-            ss << "Lexical Error at index " << t.start_pos
+            ss << "LexicalError at position " << t.start_pos
             << ": invalid character '" << t.value << "'";
             lexicalErrors.push_back(ss.str());
         }
