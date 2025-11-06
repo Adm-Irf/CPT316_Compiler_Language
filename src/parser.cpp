@@ -372,14 +372,14 @@ Parser::Node *Parser::parseFactor()
     // C. Unexpected Token (if found 2 in one after another)
     if (t.value == "+" || t.value == "-")
     {
-        reportError("unexpected operator '" + t.value + "'", t.start_pos);
+        reportError("missing left operand before the operator  '" + t.value + "'", t.start_pos);
         ++pos;
         return parseFactor(); // Try to parse again
     }
 
     if (t.value == "*" || t.value == "/")
     {
-        reportError("unexpected operator '" + t.value + "'", t.start_pos);
+        reportError("missing left operand before the operator  '" + t.value + "'", t.start_pos);
         ++pos;
         return parseFactor(); // Try to parse again
     }
