@@ -1,2 +1,5 @@
-g++ main.cpp lexer.cpp parser.cpp tree_draw.cpp -o compy.exe -lbgi -lgdi32 -lcomdlg32 -luuid -loleaut32 -lole32 -mwindows
+g++ -std=c++17 src\*.cpp -Iinclude -o main.exe ^
+    -lbgi -lgdi32 -lcomdlg32 -luuid -loleaut32 -lole32
+
 main.exe
+pause
