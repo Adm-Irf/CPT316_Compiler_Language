@@ -89,7 +89,7 @@ std::vector<Token> Lexer::tokenize()
         {
             std::stringstream ss;
             ss << "Lexical Error at index " << t.start_pos
-            << ": invalid token '" << t.value << "'";
+            << ": invalid character '" << t.value << "'";
             lexicalErrors.push_back(ss.str());
         }
     }
