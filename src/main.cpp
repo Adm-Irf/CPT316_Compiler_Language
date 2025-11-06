@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <iomanip>
+#include "tree_draw.hpp"
 
 int main()
 {
@@ -42,16 +43,16 @@ int main()
 
         // D. Log and Report Error
         // Check if Error Persisted (Print Tree or Error - Requirement lepas summary)
-        if (success && !parser.hasErrors())
-        {
+        if (success && !parser.hasErrors()) {
             std::cout << "---> Valid syntax.\n";
-            parser.printSyntaxTree();
-        }
-        else
-        {
+            // draw with graphics.h
+            TreeDraw::initCanvas();
+            TreeDraw::drawParseTree(parser.getRoot());
+            TreeDraw::closeCanvas();
+        } else {
             std::cout << "Errors found:\n";
             parser.printErrors();
         }
-    }
+            }
     return 0;
 }

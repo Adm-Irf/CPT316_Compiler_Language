@@ -41,6 +41,9 @@ public:
     std::vector<std::string> row_formatter(const display_rows &rows_disp) const;
     static void trim_rows_left(std::vector<std::string> &rows);
     void displayTree() const;
+
+     const Node* getRoot() const { return root; }
+
     // Private Member
 private:
     // Reference to Token Vector
