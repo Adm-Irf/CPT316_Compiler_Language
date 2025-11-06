@@ -3,6 +3,7 @@
 #include <string>
 #include <cctype>
 #include <map>
+#include <iomanip>   // <-- Required for std::setw and std::left
 
 // Constructor Lexer (Initialize counter to 0/start)
 Lexer::Lexer(const std::string &text) : input(text), pos(0), IDENTIFIER(0), NUMBER(0), OPERATOR(0), ASSIGNMENT(0), PARENTHESES(0), STATEMENT_TERMINATOR(0), INVALID(0) {}
@@ -80,12 +81,16 @@ std::vector<Token> Lexer::tokenize()
         }
     }
 
-    // Print Lexical Error (Case 9 : Invalid Token) found
-    for (const auto &t : tokens) 
+    // Collect Lexical Errors (Case 9 : Invalid Token) found
+    lexicalErrors.clear();
+    for (const auto &t : tokens)
     {
-        if (t.type == TokenType::INVALID) {
-            std::cerr << "Lexical error: invalid token '"
-                    << t.value << "' at index " << t.start_pos << std::endl;
+        if (t.type == TokenType::INVALID)
+        {
+            std::stringstream ss;
+            ss << "Lexical Error at index " << t.start_pos
+            << ": invalid token '" << t.value << "'";
+            lexicalErrors.push_back(ss.str());
         }
     }
     return tokens;
@@ -112,5 +117,83 @@ void Lexer::summarize()
         // Avoid Printing Extra Token category if non-exist/ Only print when exist (avoid printing all)
         if (count > 0)
             std::cout << name << ": " << count << std::endl;
+    }
+}
+
+// Print token stream table (formatted + numbering)
+void Lexer::printTokenStreamTable(const std::vector<Token> &tokens)
+{
+    std::cout << "\n-----------------------------------------------------------\n";
+    std::cout << "                   Token Stream Table\n";
+    std::cout << "-----------------------------------------------------------\n";
+
+    std::cout << std::left
+              << std::setw(5)  << "No."
+              << std::setw(15) << "Lexeme"
+              << std::setw(25) << "Token Types"
+              << std::setw(20) << "Token" << "\n";
+    std::cout << "-----------------------------------------------------------\n";
+
+    int i = 1;
+    for (const auto &t : tokens)
+    {
+        std::string tokenType, tokenFormatted;
+
+        switch (t.type)
+        {
+        case TokenType::IDENTIFIER:
+            tokenType = "Identifier";
+            tokenFormatted = "<id, \"" + t.value + "\">";
+            break;
+        case TokenType::NUMBER:
+            tokenType = "Number";
+            tokenFormatted = "<" + t.value + ">";
+            break;
+        case TokenType::OPERATOR:
+            tokenType = "Operator";
+            tokenFormatted = "< " + t.value + " >";
+            break;
+        case TokenType::ASSIGNMENT:
+            tokenType = "Assignment";
+            tokenFormatted = "< = >";
+            break;
+        case TokenType::LEFT_PAREN:
+            tokenType = "Left Parenthesis";
+            tokenFormatted = "< ( >";
+            break;
+        case TokenType::RIGHT_PAREN:
+            tokenType = "Right Parenthesis";
+            tokenFormatted = "< ) >";
+            break;
+        case TokenType::STATEMENT_TERMINATOR:
+            tokenType = "Statement Terminator";
+            tokenFormatted = "< ; >";
+            break;
+        case TokenType::INVALID:
+            tokenType = "Error";
+            tokenFormatted = "Error";
+            break;
+        default:
+            tokenType = "Unknown";
+            tokenFormatted = "Error";
+        }
+
+        std::cout << std::left
+                  << std::setw(7)  << i++
+                  << std::setw(13) << t.value
+                  << std::setw(25) << tokenType
+                  << std::setw(20) << tokenFormatted
+                  << "\n";
+    }
+
+    std::cout << "-----------------------------------------------------------\n\n";
+}
+
+void Lexer::printLexicalErrors() const
+{
+    if (!lexicalErrors.empty())
+    {
+        for (const auto &err : lexicalErrors)
+            std::cout << err << std::endl;
     }
 }

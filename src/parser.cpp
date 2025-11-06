@@ -38,7 +38,7 @@ void Parser::reportError(const std::string &msg) { reportError(msg, -1); }
 void Parser::reportError(const std::string &msg, int position)
 {
     std::string where = (position >= 0 ? std::to_string(position) : "end");
-    std::string full = "SyntaxError at position " + where + ": " + msg;
+    std::string full = "Syntax Error at position " + where + ": " + msg;
     errorMessages.push_back(full);
     errorOccurred = true;
 }
@@ -57,61 +57,59 @@ bool Parser::hasErrors() const { return !errorMessages.empty(); }
 // 6.1 If Parsing Succeeded
 bool Parser::parse()
 {
-    // Reser state for new parse
+    // Reset state
     errorMessages.clear();
     errorOccurred = false;
     root = nullptr;
     pos = 0;
 
-    // Empty Input
     if (tokens.empty())
     {
         reportError("Empty input.");
         return false;
     }
 
-    // A. Parse the first only allowed statement
-    root = parseStatement();
+    bool firstStatement = true;
 
-    if (!root)
+    // Parse statements separated by semicolons
+    while (pos < tokens.size())
     {
-        // If critical error in parseStatement then skip
-        while (pos < tokens.size())
-            ++pos; // Continue remaining Token
-        return false;
-    }
-
-    // B. Check Statement Terminator
-    if (pos < tokens.size() && tokens[pos].value == ";")
-    {
-        ++pos;
-    }
-    else
-    { // If terminator not found
-        int p = (pos < (int)tokens.size() ? tokens[pos].start_pos : -1);
-        reportError("missing statement terminator ';'.", p);
-    }
-
-    // C. Check Extra token after a termination
-    if (pos < tokens.size())
-    {
-        reportError("more expressions found after ';' (only one statement allowed).", tokens[pos].start_pos);
-
-        // Need to read it all (although we only take the First Expression)
-        while (pos < tokens.size())
+        // If we already parsed one statement and encounter another token that starts one,
+        // log that multiple statements are not allowed — but still continue parsing for errors.
+        if (!firstStatement)
         {
-            parseStatement(); // Parse and discord (Need to log error/Read it all)
-            if (pos < tokens.size() && tokens[pos].value == ";")
-            {
-                ++pos;
-            }
+            reportError("more expressions found after ';' (only one statement allowed).", 
+                        tokens[pos].start_pos);
         }
+
+        Node *stmtRoot = parseStatement();
+        if (!root && stmtRoot) // keep the first valid tree only
+            root = stmtRoot;
+
+        // Check for statement terminator
+        if (pos < tokens.size() && tokens[pos].value == ";")
+        {
+            ++pos; // consume ';'
+        }
+        else
+        {
+            // missing semicolon – recover until next ';' or end
+            int p = (pos < (int)tokens.size() ? tokens[pos].start_pos : -1);
+            reportError("missing statement terminator ';'.", p);
+            while (pos < tokens.size() && tokens[pos].value != ";")
+                ++pos;
+            if (pos < tokens.size())
+                ++pos;
+        }
+
+        firstStatement = false; // next statement triggers "more expressions" error
     }
 
-    // D. Final Check
     bool treeHasError = containsErrorNode(root);
     return !hasErrors() && !treeHasError && root != nullptr;
 }
+
+
 
 // 6.2 The rules (Grammar) | [ <stmt> -> id = <expr> ; ]
 Parser::Node *Parser::parseStatement()
@@ -148,7 +146,7 @@ Parser::Node *Parser::parseStatement()
         if ((pos + 1) < tokens.size() && tokens[pos + 1].value == "=")
         {
             reportError("extra assignment '==' is not allowed.", tokens[pos].start_pos);
-            pos += 2; // Skip both "==" becouse it has different meaning (Same as)
+            pos += 2; // Skip both "==" because it has different meaning (Same as)
         }
         else
         {
@@ -156,10 +154,12 @@ Parser::Node *Parser::parseStatement()
         }
     }
 
-    // C. Check for empty Right Parenthesis
-    if (pos < tokens.size() && tokens[pos].value == ";")
+    // C. Check for missing right-hand expression
+    // Only report if there is truly nothing to parse after '='
+    if (pos >= tokens.size() || tokens[pos].value == ";")
     {
-        reportError("missing right-hand expression after '='.", tokens[pos].start_pos);
+        reportError("missing right-hand expression after '='.", 
+                    (pos < tokens.size() ? tokens[pos].start_pos : -1));
     }
 
     // D. Parse the right-hand Expression
@@ -169,13 +169,19 @@ Parser::Node *Parser::parseStatement()
 
     // Return the assignment Node
     return new Node("=", TokenType::ASSIGNMENT, left, right);
+
 }
 
 // 6.3 Addition/Subtraction Expression | [ <expr> -> <term> { ('+' | '-') <term> } ]
 Parser::Node *Parser::parseExpr()
 {
     // Parse the first
+    // Skip invalid tokens before starting expression
+    while (pos < tokens.size() && tokens[pos].type == TokenType::INVALID)
+        ++pos;
+
     Node *left = parseTerm();
+
 
     // Handle the missing Operand
     if (!left)
@@ -184,6 +190,7 @@ Parser::Node *Parser::parseExpr()
         if (pos < tokens.size() && (tokens[pos].value == "+" || tokens[pos].value == "-"))
         {
             reportError("missing operand before '" + tokens[pos].value + "'", tokens[pos].start_pos);
+            left = new Node("error", TokenType::INVALID); // keep structure alive
             ++pos;
         }
         left = new Node("error", TokenType::INVALID);
@@ -210,31 +217,38 @@ Parser::Node *Parser::parseExpr()
     while (pos < tokens.size())
     {
         const auto &t = tokens[pos];
-        bool isEnd = (t.value == ")" || t.value == ";");
-        if (isEnd)
+
+        // Stop cleanly if we reach end of expression or statement
+        if (t.value == ")" || t.value == ";")
             break;
 
-        // List of Print Error
         if (t.type == TokenType::INVALID)
         {
-            reportError("unexpected token '" + t.value + "'", t.start_pos);
             ++pos;
+            continue;
         }
-        else if (t.value == "=")
+
+        if (t.value == "=")
         {
             reportError("chained assignment is not allowed (found '=' in expression).", t.start_pos);
             ++pos;
+            continue;
         }
-        else if (isFactorStart(t))
+
+        if (isFactorStart(t))
         {
-            reportError("missing operator before '" + t.value + "'", t.start_pos);
-            parseTerm(); // Parse and discard
-        }
-        else
-        { // Any other unexpected token
-            reportError("unexpected token '" + t.value + "'", t.start_pos);
+            // Only flag missing operator if this isn't following a valid operator
+            if (!(pos > 0 && (tokens[pos - 1].type == TokenType::OPERATOR)))
+            {
+                reportError("missing operator before '" + t.value + "'", t.start_pos);
+            }
+            // Don’t consume semicolon or valid factor here
             ++pos;
+            continue;
         }
+
+        // Any other unexpected token
+        ++pos;
     }
     return left;
 }
@@ -243,7 +257,14 @@ Parser::Node *Parser::parseExpr()
 Parser::Node *Parser::parseTerm()
 {
     // Parse the first factor
-    Node *left = parseFactor();
+    Node *left = nullptr;
+
+    // Skip invalid tokens before starting
+    while (pos < tokens.size() && tokens[pos].type == TokenType::INVALID)
+        ++pos;
+
+    left = parseFactor();
+
 
     // Loop for * / factor
     while (pos < tokens.size() && isMulDivOp(tokens[pos].value))
@@ -281,8 +302,9 @@ Parser::Node *Parser::parseTerm()
         // List of Print Error
         if (t.type == TokenType::INVALID)
         {
-            reportError("unexpected token '" + t.value + "'", t.start_pos);
+            //reportError("unexpected token '" + t.value + "'", t.start_pos);
             ++pos;
+            continue;
         }
         else if (t.value == "=")
         {
@@ -296,7 +318,7 @@ Parser::Node *Parser::parseTerm()
         }
         else
         { // Any other unexpected Token
-            reportError("unexpected token '" + t.value + "'", t.start_pos);
+            //reportError("unexpected token '" + t.value + "'", t.start_pos);
             ++pos;
         }
     }
@@ -355,14 +377,14 @@ Parser::Node *Parser::parseFactor()
     // C. Unexpected Token (if found 2 in one after another)
     if (t.value == "+" || t.value == "-")
     {
-        reportError("unexpected operator '" + t.value + "' (skipping)", t.start_pos);
+        reportError("unexpected operator '" + t.value + "'", t.start_pos);
         ++pos;
         return parseFactor(); // Try to parse again
     }
 
     if (t.value == "*" || t.value == "/")
     {
-        reportError("unexpected operator '" + t.value + "' (skipping)", t.start_pos);
+        reportError("unexpected operator '" + t.value + "'", t.start_pos);
         ++pos;
         return parseFactor(); // Try to parse again
     }
@@ -374,7 +396,7 @@ Parser::Node *Parser::parseFactor()
     }
 
     // Catch all error
-    reportError("unexpected token '" + t.value + "'", t.start_pos);
+    //reportError("unexpected token '" + t.value + "'", t.start_pos);
     ++pos; //
     return nullptr;
 }
@@ -481,7 +503,7 @@ display_rows Parser::get_row_display() const
             if (pn)
             {
                 // this affect how the value is printed on the tree
-                ss << pn->value << classifyToken(pn->value);
+                ss << pn->value;
                 rows_disp.back().push_back(cell_display(ss.str()));
                 ss = std::stringstream();
             }
@@ -677,9 +699,9 @@ void Parser::printSyntaxTree()
     }
 
     std::cout << " \n";
-    std::cout << "---------------------------------------\n";
-    std::cout << "             Syntax Tree\n";
-    std::cout << "---------------------------------------\n\n";
+    std::cout << "-----------------------------------------------------------\n";
+    std::cout << "                       Syntax Tree\n";
+    std::cout << "-----------------------------------------------------------\n\n";
 
     // print the tree
     displayTree();

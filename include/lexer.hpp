@@ -21,9 +21,14 @@ private:
     int STATEMENT_TERMINATOR;
     int INVALID;
 
+    std::vector<std::string> lexicalErrors;
+
 // Public Member
 public:
     explicit Lexer(const std::string &text);    // Constructor new Lexer
     std::vector<Token> tokenize();              // Scan input & returns a vector(list) of Token Object
     void summarize();                           // Prints the summary Tokens Type Count
+    void printTokenStreamTable(const std::vector<Token> &tokens);
+    bool hasLexicalErrors() const { return !lexicalErrors.empty(); }
+    void printLexicalErrors() const; 
 };
