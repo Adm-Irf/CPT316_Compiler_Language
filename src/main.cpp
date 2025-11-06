@@ -6,13 +6,14 @@
 
 int main()
 {
-    system(""); // enable color for Windows CMD
+    system("");
     std::string input;
     int testCount = 0;
 
     std::cout << "\n\033[38;5;117m===========================================================\n";
     std::cout << "          Welcome to the COMPY Language Compiler\n";
-    std::cout << "===========================================================\n";
+    std::cout << "===========================================================\033[0m\n";
+    
     // Loop (Easy for Testing)
     while (true)
     {   
@@ -66,11 +67,11 @@ int main()
         else if (success)
         {
             std::cout << "\033[1;32m---> Valid syntax.\n";
+            std::cout << "\033[38;5;121m";
             parser.printSyntaxTree();
-            std::cout << "\033[0m";
         }
 
-        std::cout << "\033[38;5;117m\n=========================<COMPLETE>========================\n";
+        std::cout << "\033[38;5;117m\n=======================<COMPLETE>==========================\033[0m\n";
 
     }
     return 0;
