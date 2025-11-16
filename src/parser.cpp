@@ -275,7 +275,7 @@ Parser::Node *Parser::parseTerm()
             right = new Node("error", TokenType::INVALID);
         }
 
-        // Check for division by 0 (Logically error)
+        // Check for division by 0 (Logical error)
         if (op == "/" && right && right->type == TokenType::NUMBER && right->value == "0")
         {
             reportError("division by zero is not allowed.", tokens[pos - 1].start_pos);
@@ -474,7 +474,14 @@ display_rows Parser::get_row_display() const
             if (pn)
             {
                 // This affect how the value is printed on the tree
-                ss << pn->value;
+                if(pn->type == TokenType::OPERATOR)
+                {
+                    ss << "(" << pn->value << ")";
+                }
+                else
+                {
+                    ss << pn->value;
+                }
                 rows_disp.back().push_back(cell_display(ss.str()));
                 ss = std::stringstream();
             }

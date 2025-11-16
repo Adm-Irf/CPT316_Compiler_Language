@@ -4,6 +4,7 @@
 #include <string>
 #include <cctype>
 #include <map>
+#include <sstream>
 
 // Constructor Lexer (Initialize counter to 0/start)
 Lexer::Lexer(const std::string &text) : input(text), pos(0), IDENTIFIER(0), NUMBER(0), OPERATOR(0), ASSIGNMENT(0), PARENTHESES(0), STATEMENT_TERMINATOR(0), INVALID(0) {}
