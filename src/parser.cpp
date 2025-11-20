@@ -113,18 +113,33 @@ Parser::Node *Parser::parseStatement()
 {
     Node *left = nullptr;
 
+    bool validStart = true;
+
     // A. Need an Identifier at start
     if (pos >= tokens.size() || tokens[pos].type != TokenType::IDENTIFIER)
     {
         reportError("statement must start with an identifier, cannot start with '" + tokens[pos].value + "'", tokens[pos].start_pos);
-        // Need to continue Parsing Till the end
         left = new Node("error_id", TokenType::INVALID);
+        validStart = false;   // <--- mark invalid start
     }
-    else // Found Identifier, Continue
+    else
     {
         left = new Node(tokens[pos].value, TokenType::IDENTIFIER);
         ++pos;
     }
+
+    // If invalid start, do NOT check for '='
+    // Jump straight to parsing the expression (best-effort recovery)
+    if (!validStart)
+    {
+        // Try to continue by parsing expression directly
+        Node* right = parseExpr();
+        if (!right)
+            right = new Node("error", TokenType::INVALID);
+
+        return new Node("=", TokenType::ASSIGNMENT, left, right);
+    }
+
 
     // B. Assignment Operator After Identifier
     if (pos >= tokens.size() || tokens[pos].value != "=")
