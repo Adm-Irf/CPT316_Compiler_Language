@@ -412,7 +412,7 @@ Parser::Node *Parser::parseFactor()
 }
 
 // 7. Tree Printing Function
-// 7.1 Get tree height to estimate the wideness (Tapi lari sikit)
+// 7.1 Get tree height to estimate the wideness
 int Parser::getTreeHeight(const Node *node) const
 {
     if (!node)
